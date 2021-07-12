@@ -1,0 +1,16 @@
+there: 1
+hello: true
+list:
+- 1
+- 2
+- 3
+listOfObjects:
+- there: 1
+  hello: true
+- there: 1
+  a: true
+  b: 1
+  c: 2
+moo:
+  there: 1
+  hello: true

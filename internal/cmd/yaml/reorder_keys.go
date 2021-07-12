@@ -15,21 +15,6 @@ func getKeysForMap(yaml map[interface{}]interface{}) []interface{} {
 	return keys
 }
 
-func priorityOf(key interface{}, priorityKeys []string) int {
-	w, ok := key.(string)
-	if !ok {
-		return math.MaxInt32
-	}
-
-	for i, k := range priorityKeys {
-		if k == w {
-			return i
-		}
-	}
-
-	return math.MaxInt32
-}
-
 func recursivelyUpdateValue(v interface{}, priorityKeys []string) interface{} {
 	switch v2 := v.(type) {
 	case map[interface{}]interface{}:
@@ -51,11 +36,40 @@ func recursivelyUpdateArray(yaml []interface{}, priorityKeys []string) []interfa
 	return r
 }
 
+func priorityOf(key interface{}, priorityKeys []string) int {
+	w, ok := key.(string)
+	if !ok {
+		return math.MaxInt32
+	}
+
+	for i, k := range priorityKeys {
+		if k == w {
+			return i
+		}
+	}
+
+	return math.MaxInt32
+}
+
+func comparator(i interface{}, j interface{}, priorityKeys []string) bool {
+	keyA := priorityOf(i, priorityKeys)
+	keyB := priorityOf(j, priorityKeys)
+
+	if keyA == math.MaxInt32 && keyB == math.MaxInt32 {
+		sa, oka := i.(string)
+		sb, okb := j.(string)
+
+		if oka && okb {
+			return sa < sb
+		}
+		return false
+	}
+	return keyA < keyB
+}
+
 func recursivelyUpdateMapSlice(yaml yamlv2.MapSlice, priorityKeys []string) yamlv2.MapSlice {
 	sort.Slice(yaml, func(i, j int) bool {
-		keyA := priorityOf(yaml[i].Key, priorityKeys)
-		keyB := priorityOf(yaml[j].Key, priorityKeys)
-		return keyA < keyB
+		return comparator(yaml[i].Key, yaml[j].Key, priorityKeys)
 	})
 
 	var r yamlv2.MapSlice
@@ -74,9 +88,7 @@ func recursivelyUpdateMap(yaml map[interface{}]interface{}, priorityKeys []strin
 	keys := getKeysForMap(yaml)
 
 	sort.Slice(keys, func(i, j int) bool {
-		keyA := priorityOf(keys[i], priorityKeys)
-		keyB := priorityOf(keys[j], priorityKeys)
-		return keyA < keyB
+		return comparator(keys[i], keys[j], priorityKeys)
 	})
 
 	r := make(yamlv2.MapSlice, 0, len(keys))
