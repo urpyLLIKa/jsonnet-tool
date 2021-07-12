@@ -8,15 +8,18 @@ import (
 	"github.com/fatih/color"
 	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
+	yamlcmd "gitlab.com/gitlab-com/gl-infra/jsonnet-render/internal/cmd/yaml"
 	"gopkg.in/yaml.v2"
 )
 
 var jpaths []string
 var multiDir string
+var priorityKeys []string
 
 func init() {
 	rootCmd.AddCommand(yamlCommand)
 	yamlCommand.PersistentFlags().StringArrayVarP(&jpaths, "jpath", "J", nil, "Specify an additional library search dir")
+	yamlCommand.PersistentFlags().StringArrayVarP(&priorityKeys, "priority-keys", "P", nil, "Order these keys first in YAML output")
 	yamlCommand.PersistentFlags().StringVarP(&multiDir, "multi", "m", ".", "Write multiple files to the directory, list files on stdout")
 }
 
@@ -34,7 +37,6 @@ func handleYAMLFile(k string, data string) error {
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
 
 	_, err = f.WriteString("# HEADER\n")
@@ -42,8 +44,9 @@ func handleYAMLFile(k string, data string) error {
 		return err
 	}
 
+	ordered := yamlcmd.ReorderKeys(m, priorityKeys)
 	encoder := yaml.NewEncoder(f)
-	encoder.Encode(m)
+	encoder.Encode(ordered)
 
 	fmt.Println(filePath)
 
@@ -55,7 +58,6 @@ var yamlCommand = &cobra.Command{
 	Short: "Generate YAML from Jsonnet",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-
 		vm := jsonnet.MakeVM()
 		vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
 		vm.StringOutput = true

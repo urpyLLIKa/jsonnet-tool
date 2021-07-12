@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-com/gl-infra/jsonnet-render
 
-go 1.13
+go 1.16
 
 require (
 	github.com/fatih/color v1.9.0
