@@ -1,6 +1,13 @@
+include:
+  # We cannot use mergrequest pipeline workflows for chef-repo because
+  # we need to run pipelines on the ops.gitlab.net mirror
+  - template: 'Workflows/Branch-Pipelines.gitlab-ci.yml'
+
 image: golang:1.16
 
 stages:
+  - check
+  - check_remote
   - test
   - build
 
@@ -15,3 +22,29 @@ compile:
   stage: build
   script:
     - go build .
+
+##############
+# Conditions #
+##############
+
+.if-mirror: &if-mirror
+  if: "$MIRROR == \"true\""
+
+.if-canonical: &if-canonical
+  if: "$CANONICAL == \"true\""
+
+# Uses Woodhouse (https://gitlab.com/gitlab-com/gl-infra/woodhouse) notification subcommand to add a MR comment on the canonical repository. See CONTRIBUTE.md#project-workflow for more information.
+notify_mirror_source:
+  allow_failure: true
+  rules:
+    - <<: *if-mirror
+  image: "registry.gitlab.com/gitlab-com/gl-infra/woodhouse:latest"
+  script: woodhouse gitlab notify-mirrored-mr
+  stage: check
+
+check_remote:
+  stage: check_remote
+  image: "registry.gitlab.com/gitlab-com/gl-infra/woodhouse:latest"
+  script: woodhouse gitlab follow-remote-pipeline --gitlab-api-base-url="https://ops.gitlab.net/api/v4" --gitlab-api-token="$OPS_API_TOKEN"
+  rules:
+    - <<: *if-canonical
