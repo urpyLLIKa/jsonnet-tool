@@ -1,0 +1,17 @@
+image: golang:1.16
+
+stages:
+  - test
+  - build
+
+format:
+  stage: test
+  script:
+    - go fmt ./...
+    - go vet ./...
+    - go test -race ./...
+
+compile:
+  stage: build
+  script:
+    - go build .

@@ -1,4 +1,4 @@
-module gitlab.com/gitlab-com/gl-infra/jsonnet-render
+module gitlab.com/gitlab-com/gl-infra/jsonnet-tool
 
 go 1.16
 

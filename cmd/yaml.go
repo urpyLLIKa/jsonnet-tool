@@ -8,7 +8,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
-	yamlcmd "gitlab.com/gitlab-com/gl-infra/jsonnet-render/internal/cmd/yaml"
+	yamlcmd "gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/cmd/yaml"
 	"gopkg.in/yaml.v2"
 )
 
