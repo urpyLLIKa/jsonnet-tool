@@ -1,9 +1,14 @@
 package main
 
 import (
+	"os"
+
 	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/cmd"
 )
 
 func main() {
-	cmd.Execute()
+	err := cmd.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
 }
