@@ -59,7 +59,7 @@ build:
       -w $PWD \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -e DOCKER_USERNAME -e DOCKER_PASSWORD -e DOCKER_REGISTRY  \
-      -e GITLAB_TOKEN \
+      -e GITLAB_TOKEN -e CI_REGISTRY_IMAGE \
       goreleaser/goreleaser release --snapshot --rm-dist
 
 semantic_release:
@@ -93,7 +93,7 @@ release:
       -w $PWD \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -e DOCKER_USERNAME -e DOCKER_PASSWORD -e DOCKER_REGISTRY  \
-      -e GITLAB_TOKEN \
+      -e GITLAB_TOKEN -e CI_REGISTRY_IMAGE \
       goreleaser/goreleaser release --rm-dist
 
 ##############
