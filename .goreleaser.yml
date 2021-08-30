@@ -21,9 +21,9 @@ archives:
 
 dockers:
   - image_templates:
-    - "gitlab-com/gl-infra/jsonnet-tool:latest"
-    - "gitlab-com/gl-infra/jsonnet-tool:{{ .Tag }}"
-    - "gitlab-com/gl-infra/jsonnet-tool:v{{ .Major }}"
+    - "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
+    - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
+    - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}"
     goos: linux
     goarch: amd64
 
