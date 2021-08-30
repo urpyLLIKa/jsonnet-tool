@@ -26,34 +26,6 @@ format:
     - go vet ./...
     - go test -race ./...
 
-compile:
-  stage: build
-  image: docker:stable
-  services:
-    - docker:dind
-  variables:
-    DOCKER_REGISTRY: $CI_REGISTRY
-    DOCKER_USERNAME: $CI_REGISTRY_USER
-    DOCKER_PASSWORD: $CI_REGISTRY_PASSWORD
-    GIT_DEPTH: 0
-
-  # Only run this release job for tags, not every commit (for example).
-  only:
-    refs:
-      - tags
-
-  script: |
-    # GITLAB_TOKEN is needed to create GitLab releases.
-    # DOCKER_* are needed to push Docker images.
-    docker run --rm --privileged \
-      -v $PWD:$PWD \
-      -w $PWD \
-      -v /var/run/docker.sock:/var/run/docker.sock \
-      -e DOCKER_USERNAME -e DOCKER_PASSWORD -e DOCKER_REGISTRY  \
-      -e GITLAB_TOKEN \
-      goreleaser/goreleaser build
-
-
 commitlint:
   stage: test
   image: node:14-alpine3.12
@@ -61,13 +33,26 @@ commitlint:
   - apk add --no-cache git
   - npm install
   script:
-  - npx commitlint --from ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA} --to HEAD --verbose
-  rules:
-  - if: $CI_MERGE_REQUEST_IID
+  - echo "${CI_COMMIT_MESSAGE}" | $(npm bin)/commitlint
+  except:
+    - main
+
+compile:
+  stage: build
+  image:
+    name: goreleaser/goreleaser
+    entrypoint: ['']
+  variables:
+    GIT_DEPTH: 0
+  script:
+    - goreleaser build --snapshot --rm-dist
 
 semantic_release:
   image: node:14
   stage: release
+  except:
+    refs:
+      - tags
   script:
     - npm install
     - $(npm bin)/semantic-release
@@ -89,8 +74,6 @@ release:
       - tags
 
   script: |
-    # GITLAB_TOKEN is needed to create GitLab releases.
-    # DOCKER_* are needed to push Docker images.
     docker run --rm --privileged \
       -v $PWD:$PWD \
       -w $PWD \
