@@ -1,3 +1,4 @@
 jsonnet-tool
 dist/
 node_modules
+dist/

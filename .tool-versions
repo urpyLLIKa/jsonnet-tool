@@ -1,4 +1,4 @@
-# asdf plugin add goreleaser https://github.com/kforsthoevel/asdf-goreleaser.git
+# asdf plugin-add goreleaser https://github.com/kforsthoevel/asdf-goreleaser.git
 goreleaser 0.173.2
 
 # asdf plugin add golangci-lint https://github.com/hypnoglow/asdf-golangci-lint.git
