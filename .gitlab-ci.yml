@@ -37,22 +37,36 @@ commitlint:
   except:
     - main
 
-compile:
+build:
   stage: build
-  image:
-    name: goreleaser/goreleaser
-    entrypoint: ['']
+  image: docker:stable
+  services:
+    - docker:dind
   variables:
+    DOCKER_REGISTRY: $CI_REGISTRY
+    DOCKER_USERNAME: $CI_REGISTRY_USER
+    DOCKER_PASSWORD: $CI_REGISTRY_PASSWORD
     GIT_DEPTH: 0
-  script:
-    - goreleaser build --snapshot --rm-dist
+
+  # Only run this release job for tags, not every commit (for example).
+  except:
+    refs:
+      - tags
+
+  script: |
+    docker run --rm --privileged \
+      -v $PWD:$PWD \
+      -w $PWD \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -e DOCKER_USERNAME -e DOCKER_PASSWORD -e DOCKER_REGISTRY  \
+      -e GITLAB_TOKEN \
+      goreleaser/goreleaser release --snapshot --rm-dist
 
 semantic_release:
   image: node:14
   stage: release
-  except:
-    refs:
-      - tags
+  only:
+    - main
   script:
     - npm install
     - $(npm bin)/semantic-release
