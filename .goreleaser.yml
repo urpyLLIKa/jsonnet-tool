@@ -17,13 +17,13 @@ archives:
       linux: Linux
       amd64: x86_64
 
-dockers:
-  - image_templates:
-    - "gitlab-com/gl-infra/jsonnet-tool:latest"
-    - "gitlab-com/gl-infra/jsonnet-tool:{{ .Tag }}"
-    - "gitlab-com/gl-infra/jsonnet-tool:v{{ .Major }}"
-    goos: linux
-    goarch: amd64
+# dockers:
+#   - image_templates:
+#     - "gitlab-com/gl-infra/jsonnet-tool:latest"
+#     - "gitlab-com/gl-infra/jsonnet-tool:{{ .Tag }}"
+#     - "gitlab-com/gl-infra/jsonnet-tool:v{{ .Major }}"
+#     goos: linux
+#     goarch: amd64
 
 release:
   gitlab:
