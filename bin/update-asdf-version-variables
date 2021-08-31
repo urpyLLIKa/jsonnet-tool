@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+cd "$( dirname "${BASH_SOURCE[0]}")/.."
+
+(asdf current 2>&1) | \
+ grep "$(pwd)" | \
+ awk '
+  BEGIN {
+    print "# DO NOT MANUALLY EDIT; Run ./bin/update-asdf-version-variables to update this";
+    print "variables:"
+  }
+  {
+    gsub("-", "_", $1);
+    print "    ASDF_" toupper($1) "_VERSION: " $2
+    gsub(/\..*/, "", $2)
+    print "    ASDF_" toupper($1) "_MAJOR_VERSION: " $2
+  }
+  ' > .gitlab-ci-asdf-versions.yml
