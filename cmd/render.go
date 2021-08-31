@@ -55,7 +55,7 @@ func handleYAMLData(k string, data map[string]interface{}) error {
 	defer f.Close()
 
 	if header != "" {
-		_, err = f.WriteString(header)
+		_, err = f.WriteString(header + "\n")
 		if err != nil {
 			return err
 		}
