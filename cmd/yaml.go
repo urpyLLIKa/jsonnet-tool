@@ -52,7 +52,7 @@ func handleYAMLFile(k string, data string) error {
 	defer f.Close()
 
 	if header != "" {
-		_, err = f.WriteString(header)
+		_, err = f.WriteString(header + "\n")
 		if err != nil {
 			return err
 		}
