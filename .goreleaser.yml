@@ -12,6 +12,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags:
+      - -s -w -X '{{.ModulePath}}/cmd.version={{.Version}}' -X '{{.ModulePath}}/cmd.commit={{.Commit}}' -X '{{.ModulePath}}/cmd.date={{.Date}}'
 
 archives:
   - replacements:
