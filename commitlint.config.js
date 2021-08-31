@@ -13,6 +13,6 @@ module.exports = {
     "type-case": [2, "always", "lower-case"],
     "type-empty": [2, "never"],
     "type-enum": [2, "always", ["chore", "ci", "docs", "feat", "fix", "perf", "refactor", "revert", "style", "test"]],
-    "scope-enum": [2, "always", ["build", "generation", "docs"]],
+    "scope-enum": [2, "always", ["build", "generation", "docs", "cli"]],
   },
 };
