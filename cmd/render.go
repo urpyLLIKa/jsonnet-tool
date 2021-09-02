@@ -16,6 +16,7 @@ func init() {
 	rootCmd.AddCommand(renderCommand)
 	renderCommand.PersistentFlags().StringArrayVarP(&jpaths, "jpath", "J", nil, "Specify an additional library search dir")
 	renderCommand.PersistentFlags().StringVarP(&multiDir, "multi", "m", ".", "Write multiple files to the directory, list files on stdout")
+	renderCommand.PersistentFlags().StringVarP(&header, "header", "H", "", "Write header to each file")
 	renderCommand.PersistentFlags().StringVarP(&filenamePrefix, "prefix", "p", "", "Prefix to append to every emitted file")
 }
 
