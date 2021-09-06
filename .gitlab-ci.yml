@@ -62,6 +62,8 @@ semantic_release:
   stage: release
   only:
     - main
+  variables:
+    GITLAB_URL: $CI_SERVER_URL
   script:
     - npm install
     - $(npm bin)/semantic-release
