@@ -1,9 +1,10 @@
+---
 before:
   hooks:
     - go mod tidy
 builds:
-  - id: "jsonnet-tool"
-    binary: "jsonnet-tool"
+  - id: jsonnet-tool
+    binary: jsonnet-tool
     env:
       - CGO_ENABLED=0
     goos:
@@ -13,7 +14,10 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X '{{.ModulePath}}/cmd.version={{.Version}}' -X '{{.ModulePath}}/cmd.commit={{.Commit}}' -X '{{.ModulePath}}/cmd.date={{.Date}}'
+      - -s -w
+      - -X '{{.ModulePath}}/cmd.version={{.Version}}'
+      - -X '{{.ModulePath}}/cmd.commit={{.Commit}}'
+      - -X '{{.ModulePath}}/cmd.date={{.Date}}'
 
 archives:
   - replacements:
@@ -23,21 +27,21 @@ archives:
 
 dockers:
   - image_templates:
-    - "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
-    - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
-    - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}"
+      - '{{ .Env.CI_REGISTRY_IMAGE }}:latest'
+      - '{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}'
+      - '{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}'
     goos: linux
     goarch: amd64
 
 release:
   gitlab:
-    name: 28085261
+    name: '{{ .Env.CI_PROJECT_ID }}'
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: checksums.txt
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: '{{ .Tag }}-next'
 
 changelog:
   sort: asc
@@ -45,3 +49,7 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+gitlab_urls:
+  api: '{{ .Env.CI_API_V4_URL }}'
+  download: '{{ .Env.CI_SERVER_URL }}'
