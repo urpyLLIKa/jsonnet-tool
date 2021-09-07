@@ -60,6 +60,9 @@ $ jsonnet-tool yaml \
     file.jsonnet
 ```
 
+## Examples
+
+Check the [`examples/`](examples/) directory for examples of files suitable for `jsonnet-tool`.
 
 ## Issue creation
 

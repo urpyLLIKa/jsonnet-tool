@@ -1,70 +1,22 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"path"
-
 	"github.com/fatih/color"
 	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
-	yamlcmd "gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/cmd/yaml"
-	"gopkg.in/yaml.v2"
+	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/render"
 )
 
-var jpaths []string
-var multiDir string
-var priorityKeys []string
-var header string
-var filenamePrefix string
+var yamlCommandJPaths []string
+var yamlCommandRenderOptions render.Options
 
 func init() {
 	rootCmd.AddCommand(yamlCommand)
-	yamlCommand.PersistentFlags().StringArrayVarP(&jpaths, "jpath", "J", nil, "Specify an additional library search dir")
-	yamlCommand.PersistentFlags().StringArrayVarP(&priorityKeys, "priority-keys", "P", nil, "Order these keys first in YAML output")
-	yamlCommand.PersistentFlags().StringVarP(&multiDir, "multi", "m", ".", "Write multiple files to the directory, list files on stdout")
-	yamlCommand.PersistentFlags().StringVarP(&header, "header", "H", "", "Write header to each file")
-	yamlCommand.PersistentFlags().StringVarP(&filenamePrefix, "prefix", "p", "", "Prefix to append to every emitted file")
-}
-
-func handleYAMLFile(k string, data string) error {
-	m := make(map[interface{}]interface{})
-
-	err := yaml.Unmarshal([]byte(data), &m)
-	if err != nil {
-		return err
-	}
-
-	filePath := path.Join(multiDir, k)
-	fileDir := path.Dir(filePath)
-	fileBase := path.Base(filePath)
-	filePathWithPrefix := path.Join(fileDir, filenamePrefix+fileBase)
-
-	err = os.MkdirAll(fileDir, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Create(filePathWithPrefix)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if header != "" {
-		_, err = f.WriteString(header + "\n")
-		if err != nil {
-			return err
-		}
-	}
-
-	ordered := yamlcmd.ReorderKeys(m, priorityKeys)
-	encoder := yaml.NewEncoder(f)
-	encoder.Encode(ordered)
-
-	fmt.Println(filePath)
-
-	return nil
+	yamlCommand.PersistentFlags().StringArrayVarP(&yamlCommandJPaths, "jpath", "J", nil, "Specify an additional library search dir")
+	yamlCommand.PersistentFlags().StringArrayVarP(&yamlCommandRenderOptions.PriorityKeys, "priority-keys", "P", nil, "Order these keys first in YAML output")
+	yamlCommand.PersistentFlags().StringVarP(&yamlCommandRenderOptions.MultiDir, "multi", "m", ".", "Write multiple files to the directory, list files on stdout")
+	yamlCommand.PersistentFlags().StringVarP(&yamlCommandRenderOptions.Header, "header", "H", "", "Write header to each file")
+	yamlCommand.PersistentFlags().StringVarP(&yamlCommandRenderOptions.FilenamePrefix, "prefix", "p", "", "Prefix to append to every emitted file")
 }
 
 var yamlCommand = &cobra.Command{
@@ -77,7 +29,7 @@ var yamlCommand = &cobra.Command{
 		vm.StringOutput = true
 
 		vm.Importer(&jsonnet.FileImporter{
-			JPaths: jpaths,
+			JPaths: yamlCommandJPaths,
 		})
 
 		files, err := vm.EvaluateFileMulti(args[0])
@@ -86,7 +38,7 @@ var yamlCommand = &cobra.Command{
 		}
 
 		for k, data := range files {
-			err = handleYAMLFile(k, data)
+			err = render.YAMLStringData(k, data, yamlCommandRenderOptions)
 			if err != nil {
 				return err
 			}
