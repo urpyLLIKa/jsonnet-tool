@@ -1,3 +1,5 @@
+// This file contains examples of output suitable for `jsonnet-tool yaml`
+// `jsonnet-tool yaml` will emit formatted YAML from a Jsonnet input
 {
   'moo.yaml': std.manifestYamlDoc({
     hello: true,

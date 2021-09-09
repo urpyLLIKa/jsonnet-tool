@@ -3,93 +3,45 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path"
 
 	"github.com/fatih/color"
 	"github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/render"
 )
+
+var renderCommandJPaths []string
+var renderCommandRenderOptions render.Options
 
 func init() {
 	rootCmd.AddCommand(renderCommand)
-	renderCommand.PersistentFlags().StringArrayVarP(&jpaths, "jpath", "J", nil, "Specify an additional library search dir")
-	renderCommand.PersistentFlags().StringVarP(&multiDir, "multi", "m", ".", "Write multiple files to the directory, list files on stdout")
-	renderCommand.PersistentFlags().StringVarP(&header, "header", "H", "", "Write header to each file")
-	renderCommand.PersistentFlags().StringVarP(&filenamePrefix, "prefix", "p", "", "Prefix to append to every emitted file")
+	renderCommand.PersistentFlags().StringArrayVarP(&renderCommandJPaths, "jpath", "J", nil, "Specify an additional library search dir")
+	renderCommand.PersistentFlags().StringVarP(&renderCommandRenderOptions.MultiDir, "multi", "m", ".", "Write multiple files to the directory, list files on stdout")
+	renderCommand.PersistentFlags().StringVarP(&renderCommandRenderOptions.Header, "header", "H", "", "Write header to each file")
+	renderCommand.PersistentFlags().StringVarP(&renderCommandRenderOptions.FilenamePrefix, "prefix", "p", "", "Prefix to append to every emitted file")
+}
+
+func handleYAMLFileType(k string, data interface{}) error {
+	switch v := data.(type) {
+	case string:
+		return render.YAMLStringData(k, v, renderCommandRenderOptions)
+	case map[string]interface{}:
+		return render.YAMLMapData(k, v, renderCommandRenderOptions)
+	default:
+		return fmt.Errorf("unexpected type in map for key `%v`: %T", k, v)
+	}
 }
 
 func handleRenderFile(k string, data interface{}) error {
 	switch path.Ext(k) {
 	case ".yml":
-		mapData := data.(map[string]interface{})
-		return handleYAMLData(k, mapData)
+		return handleYAMLFileType(k, data)
 	case ".yaml":
-		mapData := data.(map[string]interface{})
-		return handleYAMLData(k, mapData)
+		return handleYAMLFileType(k, data)
 	default:
-		return handleDefaultData(k, data)
+		return render.JSONData(k, data, renderCommandRenderOptions)
 	}
-}
-
-func openFile(filename string) (*os.File, string, error) {
-	filePath := path.Join(multiDir, filename)
-	fileDir := path.Dir(filePath)
-	fileBase := path.Base(filePath)
-	filePathWithPrefix := path.Join(fileDir, filenamePrefix+fileBase)
-
-	err := os.MkdirAll(fileDir, os.ModePerm)
-	if err != nil {
-		return nil, "", err
-	}
-
-	f, err := os.Create(filePathWithPrefix)
-	return f, filePath, err
-}
-
-func handleYAMLData(k string, data map[string]interface{}) error {
-	f, filePath, err := openFile(k)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if header != "" {
-		_, err = f.WriteString(header + "\n")
-		if err != nil {
-			return err
-		}
-	}
-
-	encoder := yaml.NewEncoder(f)
-	encoder.Encode(data)
-
-	fmt.Println(filePath)
-
-	return nil
-}
-
-func handleDefaultData(k string, data interface{}) error {
-	f, filePath, err := openFile(k)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	marshalled, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	_, err = f.Write([]byte(marshalled))
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(filePath)
-
-	return nil
 }
 
 var renderCommand = &cobra.Command{
@@ -101,7 +53,7 @@ var renderCommand = &cobra.Command{
 		vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
 
 		vm.Importer(&jsonnet.FileImporter{
-			JPaths: jpaths,
+			JPaths: yamlCommandJPaths,
 		})
 
 		jsonData, err := vm.EvaluateFile(args[0])
