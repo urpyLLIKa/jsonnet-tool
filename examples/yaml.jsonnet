@@ -1,9 +1,12 @@
 // This file contains examples of output suitable for `jsonnet-tool yaml`
 // `jsonnet-tool yaml` will emit formatted YAML from a Jsonnet input
+local library = import "library.libsonnet";
+
 {
   'moo.yaml': std.manifestYamlDoc({
     hello: true,
     there: 1,
+    library: library,
     moo: {
       there: 1,
       hello: true,

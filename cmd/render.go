@@ -53,7 +53,7 @@ var renderCommand = &cobra.Command{
 		vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
 
 		vm.Importer(&jsonnet.FileImporter{
-			JPaths: yamlCommandJPaths,
+			JPaths: renderCommandJPaths,
 		})
 
 		jsonData, err := vm.EvaluateFile(args[0])
