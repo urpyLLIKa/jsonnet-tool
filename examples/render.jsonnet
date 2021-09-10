@@ -1,6 +1,8 @@
 // This file contains examples of output suitable for `jsonnet-tool render`
 // Render is a flexible subcommand that allows multiple file outputs
 // to be rendered from a single execution
+local library = import "library.libsonnet";
+
 {
   // YAML files do not need to use std.manifestYamlDoc
   // jsonnet-tool render will format them as YAML
@@ -9,6 +11,7 @@
   'moo.yaml': {
     hello: true,
     there: 1,
+    library: library,
     moo: {
       there: 1,
       hello: true,

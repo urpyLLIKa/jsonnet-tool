@@ -26,9 +26,9 @@ test:
   stage: test
   script:
     - go build .
-    - ./jsonnet-tool yaml -H "# Test" -m ./test_out --prefix yaml_test_ examples/yaml.jsonnet
+    - ./jsonnet-tool yaml -J examples/test_lib -H "# Test" -m ./test_out --prefix yaml_test_ examples/yaml.jsonnet
     - (find test_out/ -name "yaml_test_*" -type f | grep -q ".") || { echo "jsonnet-tool yaml test did not generate any results"; exit 1; }
-    - ./jsonnet-tool render -H "# Test" -m ./test_out --prefix render_test_ examples/render.jsonnet
+    - ./jsonnet-tool render -J examples/test_lib  -H "# Test" -m ./test_out --prefix render_test_ examples/render.jsonnet
     - (find test_out/ -name "render_test_*" -type f | grep -q ".") || { echo "jsonnet-tool render test did not generate any results"; exit 1; }
 
 commitlint:
