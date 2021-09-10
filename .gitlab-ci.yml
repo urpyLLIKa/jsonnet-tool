@@ -66,7 +66,6 @@ build:
       -e DOCKER_USERNAME -e DOCKER_PASSWORD -e DOCKER_REGISTRY  \
       -e GITLAB_TOKEN -e CI_REGISTRY_IMAGE \
       -e CI_SERVER_URL \
-      -e CI_PROJECT_ID \
       goreleaser/goreleaser:v${ASDF_GORELEASER_VERSION} release --snapshot --rm-dist
 
 semantic_release:
@@ -104,7 +103,6 @@ release:
       -e DOCKER_USERNAME -e DOCKER_PASSWORD -e DOCKER_REGISTRY  \
       -e GITLAB_TOKEN -e CI_REGISTRY_IMAGE \
       -e CI_SERVER_URL \
-      -e CI_PROJECT_ID \
       goreleaser/goreleaser:v${ASDF_GORELEASER_VERSION} release --rm-dist
 
 ##############
