@@ -31,7 +31,8 @@ dockers:
 
 release:
   gitlab:
-    name: '{{ .Env.CI_PROJECT_ID }}'
+    owner: gitlab-com/gl-infra
+    name: jsonnet-tool
 
 checksum:
   name_template: 'checksums.txt'
