@@ -29,6 +29,10 @@ dockers:
     goos: linux
     goarch: amd64
 
+release:
+  gitlab:
+    name: '{{ .Env.CI_PROJECT_ID }}'
+
 checksum:
   name_template: 'checksums.txt'
 
