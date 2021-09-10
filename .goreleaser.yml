@@ -29,10 +29,6 @@ dockers:
     goos: linux
     goarch: amd64
 
-release:
-  gitlab:
-    name: 28085261
-
 checksum:
   name_template: 'checksums.txt'
 
@@ -45,3 +41,7 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+gitlab_urls:
+  api: '{{ .Env.CI_SERVER_URL }}'
+  download: '{{ .Env.CI_SERVER_URL }}'

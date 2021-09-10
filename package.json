@@ -12,7 +12,6 @@
   },
   "release": {
     "branches": ["main"],
-    "repositoryUrl": "https://gitlab.com/gitlab-com/gl-infra/jsonnet-tool.git",
     "plugins": [
       [
         "@semantic-release/commit-analyzer",
