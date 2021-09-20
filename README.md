@@ -15,7 +15,8 @@ $ cat file.jsonnet
     moo: {
       there: 1,
       hello: true,
-    }),
+    },
+  }),
 }
 $ jsonnet-tool yaml \
     --multi "./output" \ #       - Directory to emit the YAML file to
@@ -36,7 +37,7 @@ the extension of the file to appropriately manifest the output.
 ```console
 $ cat file.jsonnet
 {
-  # File will contain YAML output
+  // File will contain YAML output
   'file.yaml': {
     hello: true,
     there: 1,
@@ -46,13 +47,13 @@ $ cat file.jsonnet
     },
   },
 
-  # Subdirectories are automatically created
+  // Subdirectories are automatically created
   'x/y/z/file.json': {
     hello: 1,
-    x: [1, 2, 3]
-  }
+    x: [1, 2, 3],
+  },
 }
-$ jsonnet-tool yaml \
+$ jsonnet-tool render \
     --multi "./output" \ #       - Directory to emit the YAML file to
     -J "./libsonnet/" \ #        - Jsonnet Import Search Path
     -J "./vendor/" \ #           - .. supports multiple
