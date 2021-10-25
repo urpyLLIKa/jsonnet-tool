@@ -12,7 +12,7 @@ func writeStringData(f *os.File, data string) error {
 }
 
 func writeJSONData(f *os.File, data interface{}) error {
-	marshalled, err := json.Marshal(data)
+	marshalled, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		return err
 	}
