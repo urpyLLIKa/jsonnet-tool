@@ -19,7 +19,7 @@ func openFileForRender(filename string, options Options) (*os.File, string, erro
 
 	f, err := os.Create(filePathWithPrefix)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to create file: %s: %w", err, errRenderFailure)
+		return nil, "", fmt.Errorf("unable to create file: %w: %w", err, errRenderFailure)
 	}
 
 	return f, filePathWithPrefix, nil

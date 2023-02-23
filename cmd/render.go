@@ -47,7 +47,7 @@ func handleYAMLFileType(k string, data interface{}) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("unable to render YAML: %s: %w", err, errCommandFailed)
+		return fmt.Errorf("unable to render YAML: %w: %w", err, errCommandFailed)
 	}
 
 	return nil
@@ -66,7 +66,7 @@ func handleRenderFile(k string, data interface{}) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("write failed: %s: %w", err, errCommandFailed)
+		return fmt.Errorf("write failed: %w: %w", err, errCommandFailed)
 	}
 
 	return nil
@@ -86,19 +86,19 @@ var renderCommand = &cobra.Command{
 
 		jsonData, err := vm.EvaluateFile(args[0])
 		if err != nil {
-			return fmt.Errorf("failed to evaluate jsonnet: %s: %w", err, errCommandFailed)
+			return fmt.Errorf("failed to evaluate jsonnet: %w: %w", err, errCommandFailed)
 		}
 
 		m := make(map[string]interface{})
 		err = json.Unmarshal([]byte(jsonData), &m)
 		if err != nil {
-			return fmt.Errorf("failed to unmarshal json data: %s: %w", err, errCommandFailed)
+			return fmt.Errorf("failed to unmarshal json data: %w: %w", err, errCommandFailed)
 		}
 
 		for k, data := range m {
 			err = handleRenderFile(k, data)
 			if err != nil {
-				return fmt.Errorf("failed to render file: %s: %w", err, errCommandFailed)
+				return fmt.Errorf("failed to render file: %w: %w", err, errCommandFailed)
 			}
 
 		}

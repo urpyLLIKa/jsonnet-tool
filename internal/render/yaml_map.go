@@ -17,7 +17,7 @@ func YAMLMapData(filenameKey string, data map[string]interface{}, options Option
 	if options.Header != "" {
 		_, err = f.WriteString(options.Header + "\n")
 		if err != nil {
-			return fmt.Errorf("write failed: %s: %w", err, errRenderFailure)
+			return fmt.Errorf("write failed: %w: %w", err, errRenderFailure)
 		}
 	}
 
@@ -25,7 +25,7 @@ func YAMLMapData(filenameKey string, data map[string]interface{}, options Option
 
 	err = encoder.Encode(data)
 	if err != nil {
-		return fmt.Errorf("encode failure: %s: %w", err, errRenderFailure)
+		return fmt.Errorf("encode failure: %w: %w", err, errRenderFailure)
 	}
 
 	fmt.Println(filePath)
