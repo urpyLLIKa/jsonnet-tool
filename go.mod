@@ -7,6 +7,7 @@ require (
 	github.com/google/go-jsonnet v0.19.1
 	github.com/spf13/cobra v1.6.1
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
