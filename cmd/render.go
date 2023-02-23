@@ -6,8 +6,9 @@ import (
 	"path"
 
 	"github.com/fatih/color"
-	"github.com/google/go-jsonnet"
+	jsonnet "github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
+
 	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/render"
 )
 
@@ -16,32 +17,59 @@ var renderCommandRenderOptions render.Options
 
 func init() {
 	rootCmd.AddCommand(renderCommand)
-	renderCommand.PersistentFlags().StringArrayVarP(&renderCommandJPaths, "jpath", "J", nil, "Specify an additional library search dir")
-	renderCommand.PersistentFlags().StringVarP(&renderCommandRenderOptions.MultiDir, "multi", "m", ".", "Write multiple files to the directory, list files on stdout")
-	renderCommand.PersistentFlags().StringVarP(&renderCommandRenderOptions.Header, "header", "H", "", "Write header to each file")
-	renderCommand.PersistentFlags().StringVarP(&renderCommandRenderOptions.FilenamePrefix, "prefix", "p", "", "Prefix to append to every emitted file")
+	renderCommand.PersistentFlags().StringArrayVarP(
+		&renderCommandJPaths, "jpath", "J", nil,
+		"Specify an additional library search dir",
+	)
+	renderCommand.PersistentFlags().StringVarP(
+		&renderCommandRenderOptions.MultiDir, "multi", "m", ".",
+		"Write multiple files to the directory, list files on stdout",
+	)
+	renderCommand.PersistentFlags().StringVarP(
+		&renderCommandRenderOptions.Header, "header", "H", "",
+		"Write header to each file",
+	)
+	renderCommand.PersistentFlags().StringVarP(
+		&renderCommandRenderOptions.FilenamePrefix, "prefix", "p", "",
+		"Prefix to append to every emitted file",
+	)
 }
 
 func handleYAMLFileType(k string, data interface{}) error {
+	var err error
 	switch v := data.(type) {
 	case string:
-		return render.YAMLStringData(k, v, renderCommandRenderOptions)
+		err = render.YAMLStringData(k, v, renderCommandRenderOptions)
 	case map[string]interface{}:
-		return render.YAMLMapData(k, v, renderCommandRenderOptions)
+		err = render.YAMLMapData(k, v, renderCommandRenderOptions)
 	default:
-		return fmt.Errorf("unexpected type in map for key `%v`: %T", k, v)
+		err = fmt.Errorf("unexpected type in map for key `%v`: %T: %w", k, v, errCommandFailed)
 	}
+
+	if err != nil {
+		return fmt.Errorf("unable to render YAML: %s: %w", err, errCommandFailed)
+	}
+
+	return nil
 }
 
 func handleRenderFile(k string, data interface{}) error {
+	var err error
+
 	switch path.Ext(k) {
 	case ".yml":
-		return handleYAMLFileType(k, data)
+		err = handleYAMLFileType(k, data)
 	case ".yaml":
-		return handleYAMLFileType(k, data)
+		err = handleYAMLFileType(k, data)
 	default:
-		return render.JSONData(k, data, renderCommandRenderOptions)
+		err = render.JSONData(k, data, renderCommandRenderOptions)
 	}
+
+	if err != nil {
+		return fmt.Errorf("write failed: %s: %w", err, errCommandFailed)
+	}
+
+	return nil
 }
 
 var renderCommand = &cobra.Command{
@@ -58,19 +86,19 @@ var renderCommand = &cobra.Command{
 
 		jsonData, err := vm.EvaluateFile(args[0])
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to evaluate jsonnet: %s: %w", err, errCommandFailed)
 		}
 
 		m := make(map[string]interface{})
 		err = json.Unmarshal([]byte(jsonData), &m)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to unmarshal json data: %s: %w", err, errCommandFailed)
 		}
 
 		for k, data := range m {
 			err = handleRenderFile(k, data)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to render file: %s: %w", err, errCommandFailed)
 			}
 
 		}

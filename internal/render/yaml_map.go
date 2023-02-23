@@ -3,10 +3,10 @@ package render
 import (
 	"fmt"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
-// Render a map as a YAML file
+// YAMLMapData will render a map as a YAML file.
 func YAMLMapData(filenameKey string, data map[string]interface{}, options Options) error {
 	f, filePath, err := openFileForRender(filenameKey, options)
 	if err != nil {
@@ -17,12 +17,16 @@ func YAMLMapData(filenameKey string, data map[string]interface{}, options Option
 	if options.Header != "" {
 		_, err = f.WriteString(options.Header + "\n")
 		if err != nil {
-			return err
+			return fmt.Errorf("write failed: %s: %w", err, errRenderFailure)
 		}
 	}
 
 	encoder := yaml.NewEncoder(f)
-	encoder.Encode(data)
+
+	err = encoder.Encode(data)
+	if err != nil {
+		return fmt.Errorf("encode failure: %s: %w", err, errRenderFailure)
+	}
 
 	fmt.Println(filePath)
 

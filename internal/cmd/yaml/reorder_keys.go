@@ -12,6 +12,7 @@ func getKeysForMap(yaml map[interface{}]interface{}) []interface{} {
 	for k := range yaml {
 		keys = append(keys, k)
 	}
+
 	return keys
 }
 
@@ -33,6 +34,7 @@ func recursivelyUpdateArray(yaml []interface{}, priorityKeys []string) []interfa
 	for _, v := range yaml {
 		r = append(r, recursivelyUpdateValue(v, priorityKeys))
 	}
+
 	return r
 }
 
@@ -62,8 +64,10 @@ func comparator(i interface{}, j interface{}, priorityKeys []string) bool {
 		if oka && okb {
 			return sa < sb
 		}
+
 		return false
 	}
+
 	return keyA < keyB
 }
 
@@ -73,11 +77,13 @@ func recursivelyUpdateMapSlice(yaml yamlv2.MapSlice, priorityKeys []string) yaml
 	})
 
 	var r yamlv2.MapSlice
+
 	for i := range yaml {
 		k := yaml[i].Key
 		v := yaml[i].Value
 
 		w := recursivelyUpdateValue(v, priorityKeys)
+
 		r = append(r, yamlv2.MapItem{Key: k, Value: w})
 	}
 
@@ -92,16 +98,18 @@ func recursivelyUpdateMap(yaml map[interface{}]interface{}, priorityKeys []strin
 	})
 
 	r := make(yamlv2.MapSlice, 0, len(keys))
+
 	for _, k := range keys {
 		v := yaml[k]
 		w := recursivelyUpdateValue(v, priorityKeys)
+
 		r = append(r, yamlv2.MapItem{Key: k, Value: w})
 	}
 
 	return r
 }
 
-// ReorderKeys reorders YAML prioritizing certain keys
+// ReorderKeys reorders YAML prioritizing certain keys.
 func ReorderKeys(yaml map[interface{}]interface{}, priorityKeys []string) yamlv2.MapSlice {
 	return recursivelyUpdateMap(yaml, priorityKeys)
 }

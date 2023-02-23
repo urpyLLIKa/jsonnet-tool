@@ -2,8 +2,7 @@ before:
   hooks:
     - go mod tidy
 builds:
-  - id: "jsonnet-tool"
-    binary: "jsonnet-tool"
+  - binary: "jsonnet-tool"
     env:
       - CGO_ENABLED=0
     goos:
@@ -16,37 +15,44 @@ builds:
       - -s -w -X '{{.ModulePath}}/cmd.version={{.Version}}' -X '{{.ModulePath}}/cmd.commit={{.Commit}}' -X '{{.ModulePath}}/cmd.date={{.Date}}'
 
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      amd64: x86_64
+  - id: jsonnet-tool
+    builds:
+      - jsonnet-tool
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
 
 dockers:
-  - image_templates:
-    - "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
-    - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
-    - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}"
+  - id: jsonnet-tool
+    ids:
+      - jsonnet-tool
+    image_templates:
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
     goos: linux
     goarch: amd64
 
 release:
   gitlab:
     owner: gitlab-com/gl-infra
-    name: jsonnet-tool
+    name: "jsonnet-tool"
+  mode: append
 
 checksum:
-  name_template: 'checksums.txt'
-
-snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: "checksums.txt"
 
 changelog:
   sort: asc
+  use: gitlab
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - '^test\b'
+      - '^ci\b'
 
 gitlab_urls:
-  api: '{{ .Env.CI_SERVER_URL }}'
-  download: '{{ .Env.CI_SERVER_URL }}'
+  api: "{{ .Env.CI_SERVER_URL }}"
+  download: "{{ .Env.CI_SERVER_URL }}"

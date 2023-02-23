@@ -3,35 +3,41 @@ package render
 import (
 	"fmt"
 
+	yaml "gopkg.in/yaml.v2"
+
 	yamlcmd "gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/cmd/yaml"
-	"gopkg.in/yaml.v2"
 )
 
-// Render a string as a YAML file
+// YAMLStringData will render a string as a YAML file.
 func YAMLStringData(filenameKey string, data string, options Options) error {
 	m := make(map[interface{}]interface{})
 
 	err := yaml.Unmarshal([]byte(data), &m)
 	if err != nil {
-		return err
+		return fmt.Errorf("unmarshal failed: %s: %w", err, errRenderFailure)
 	}
 
 	f, filePath, err := openFileForRender(filenameKey, options)
 	if err != nil {
-		return err
+		return fmt.Errorf("open file failed: %s: %w", err, errRenderFailure)
 	}
+
 	defer f.Close()
 
 	if options.Header != "" {
 		_, err = f.WriteString(options.Header + "\n")
 		if err != nil {
-			return err
+			return fmt.Errorf("write failed: %s: %w", err, errRenderFailure)
 		}
 	}
 
 	ordered := yamlcmd.ReorderKeys(m, options.PriorityKeys)
 	encoder := yaml.NewEncoder(f)
-	encoder.Encode(ordered)
+
+	err = encoder.Encode(ordered)
+	if err != nil {
+		return fmt.Errorf("encode failed: %s: %w", err, errRenderFailure)
+	}
 
 	fmt.Println(filePath)
 
