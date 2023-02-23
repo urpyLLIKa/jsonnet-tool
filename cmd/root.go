@@ -15,7 +15,7 @@ var rootCmd = &cobra.Command{
 func Execute() error {
 	err := rootCmd.Execute()
 	if err != nil {
-		return fmt.Errorf("execution failed %s: %w", err, errCommandFailed)
+		return fmt.Errorf("execution failed %w: %w", err, errCommandFailed)
 	}
 
 	return nil

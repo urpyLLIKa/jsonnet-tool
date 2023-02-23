@@ -14,12 +14,12 @@ func YAMLStringData(filenameKey string, data string, options Options) error {
 
 	err := yaml.Unmarshal([]byte(data), &m)
 	if err != nil {
-		return fmt.Errorf("unmarshal failed: %s: %w", err, errRenderFailure)
+		return fmt.Errorf("unmarshal failed: %w: %w", err, errRenderFailure)
 	}
 
 	f, filePath, err := openFileForRender(filenameKey, options)
 	if err != nil {
-		return fmt.Errorf("open file failed: %s: %w", err, errRenderFailure)
+		return fmt.Errorf("open file failed: %w: %w", err, errRenderFailure)
 	}
 
 	defer f.Close()
@@ -27,7 +27,7 @@ func YAMLStringData(filenameKey string, data string, options Options) error {
 	if options.Header != "" {
 		_, err = f.WriteString(options.Header + "\n")
 		if err != nil {
-			return fmt.Errorf("write failed: %s: %w", err, errRenderFailure)
+			return fmt.Errorf("write failed: %w: %w", err, errRenderFailure)
 		}
 	}
 
@@ -36,7 +36,7 @@ func YAMLStringData(filenameKey string, data string, options Options) error {
 
 	err = encoder.Encode(ordered)
 	if err != nil {
-		return fmt.Errorf("encode failed: %s: %w", err, errRenderFailure)
+		return fmt.Errorf("encode failed: %w: %w", err, errRenderFailure)
 	}
 
 	fmt.Println(filePath)

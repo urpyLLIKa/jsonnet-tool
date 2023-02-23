@@ -55,13 +55,13 @@ var yamlCommand = &cobra.Command{
 
 		files, err := vm.EvaluateFileMulti(args[0])
 		if err != nil {
-			return fmt.Errorf("failed to evaluate jsonnet: %s: %w", err, errCommandFailed)
+			return fmt.Errorf("failed to evaluate jsonnet: %w: %w", err, errCommandFailed)
 		}
 
 		for k, data := range files {
 			err = render.YAMLStringData(k, data, yamlCommandRenderOptions)
 			if err != nil {
-				return fmt.Errorf("failed to write data: %s: %w", err, errCommandFailed)
+				return fmt.Errorf("failed to write data: %w: %w", err, errCommandFailed)
 			}
 
 		}
