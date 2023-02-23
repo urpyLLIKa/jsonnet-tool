@@ -38,7 +38,7 @@ repos:
       - id: shfmt
         args: [-w, -s, -i, "2"]
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.50.1  # Keep this in-sync with `.tool-versions`
+    rev: v1.51.2  # Keep this in-sync with `.tool-versions`
     hooks:
       - id: golangci-lint
   - repo: https://github.com/adrienverge/yamllint.git
