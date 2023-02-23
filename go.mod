@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/fatih/color v1.14.1
-	github.com/google/go-jsonnet v0.18.0
+	github.com/google/go-jsonnet v0.19.1
 	github.com/spf13/cobra v1.3.0
 	gopkg.in/yaml.v2 v2.4.0
 )
