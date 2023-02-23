@@ -1,0 +1,7 @@
+[general]
+contrib=contrib-title-conventional-commits,CT1
+ignore=body-is-missing,body-min-length
+
+# [contrib-title-conventional-commits]
+# Specify allowed commit types. For details see: https://www.conventionalcommits.org/
+# types = bugfix,user-story,epic

@@ -1,11 +1,7 @@
-# asdf plugin-add goreleaser https://github.com/kforsthoevel/asdf-goreleaser.git
-goreleaser 1.2.2
-
-# asdf plugin add golangci-lint https://github.com/hypnoglow/asdf-golangci-lint.git
-golangci-lint 1.43.0
-
-# asdf plugin-add golang https://github.com/kennyp/asdf-golang.git
-golang 1.17.5
-
-# asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git
-nodejs 16.13.1
+golang 1.20 # datasource=golang-version depName=golang/go
+golangci-lint 1.50.1 # datasource=github-releases depName=golangci/golangci-lint
+goreleaser 1.2.2 # datasource=github-releases depName=goreleaser/goreleaser
+pre-commit 3.0.4 # datasource=github-releases depName=pre-commit/pre-commit
+python system # use system python
+shellcheck 0.9.0 # datasource=github-releases depName=koalaman/shellcheck
+shfmt 3.6.0 # datasource=github-releases depName=mvdan/sh

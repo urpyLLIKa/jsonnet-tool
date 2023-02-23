@@ -8,6 +8,8 @@ import (
 )
 
 func TestReorderKeys(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name         string
 		yaml         map[interface{}]interface{}
@@ -21,7 +23,9 @@ func TestReorderKeys(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := ReorderKeys(tt.yaml, tt.priorityKeys)
 
 			if !reflect.DeepEqual(got, tt.want) {

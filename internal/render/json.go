@@ -2,26 +2,37 @@ package render
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 )
 
+var errRenderFailure = errors.New("render failed")
+
 func writeStringData(f *os.File, data string) error {
 	_, err := f.Write([]byte(data))
-	return err
+	if err != nil {
+		return fmt.Errorf("write failed: %s: %w", err, errRenderFailure)
+	}
+
+	return nil
 }
 
 func writeJSONData(f *os.File, data interface{}) error {
 	marshalled, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("marshal failed: %s: %w", err, errRenderFailure)
 	}
 
-	_, err = f.Write([]byte(marshalled))
-	return err
+	_, err = f.Write(marshalled)
+	if err != nil {
+		return fmt.Errorf("write failed: %s: %w", err, errRenderFailure)
+	}
+
+	return nil
 }
 
-// JSONData renders data, either as a string or in JSON format
+// JSONData renders data, either as a string or in JSON format.
 func JSONData(filenameKey string, data interface{}, options Options) error {
 	f, filePath, err := openFileForRender(filenameKey, options)
 	if err != nil {
@@ -33,13 +44,13 @@ func JSONData(filenameKey string, data interface{}, options Options) error {
 	case string:
 		err = writeStringData(f, v)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to write string data: %s: %w", err, errRenderFailure)
 		}
 
 	default:
 		err = writeJSONData(f, v)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to write JSON data: %s: %w", err, errRenderFailure)
 		}
 	}
 
