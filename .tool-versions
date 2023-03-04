@@ -1,7 +1,7 @@
 golang 1.20.1 # datasource=golang-version depName=golang/go
 golangci-lint 1.51.2 # datasource=github-releases depName=golangci/golangci-lint
 goreleaser 1.15.2 # datasource=github-releases depName=goreleaser/goreleaser
-pre-commit 3.1.0 # datasource=github-releases depName=pre-commit/pre-commit
+pre-commit 3.1.1 # datasource=github-releases depName=pre-commit/pre-commit
 python system # use system python
 shellcheck 0.9.0 # datasource=github-releases depName=koalaman/shellcheck
 shfmt 3.6.0 # datasource=github-releases depName=mvdan/sh
