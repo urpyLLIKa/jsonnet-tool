@@ -47,10 +47,10 @@ repos:
       - id: yamllint
         args: [-c=.yamllint.yaml]
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.16.0
+    rev: v8.16.1
     hooks:
       - id: gitleaks
   - repo: https://github.com/jorisroovers/gitlint
-    rev: v0.18.0
+    rev: v0.19.1
     hooks:
       - id: gitlint
