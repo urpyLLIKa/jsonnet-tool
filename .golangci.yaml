@@ -375,6 +375,7 @@ linters:
     - execinquery
     - exhaustivestruct  # This linter has been deprecated.
     - exhaustruct       # Replacement for the `exhaustivestruct` linter.
+    - depguard
     - gci
     - gochecknoglobals
     - gochecknoinits
