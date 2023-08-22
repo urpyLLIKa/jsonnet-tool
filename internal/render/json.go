@@ -10,7 +10,7 @@ import (
 var errRenderFailure = errors.New("render failed")
 
 func writeStringData(f *os.File, data string) error {
-	_, err := f.Write([]byte(data))
+	_, err := f.WriteString(data)
 	if err != nil {
 		return fmt.Errorf("write failed: %w: %w", err, errRenderFailure)
 	}
