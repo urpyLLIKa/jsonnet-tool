@@ -19,11 +19,14 @@ warn() {
   echo >&2 -e "Recommended reading: https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/docs/developer-setup.md"
 }
 
-# check that asdf is installed
-[[ -n ${ASDF_DIR-} ]] || {
-  warn "asdf not installed. "
+if command -v rtx >/dev/null; then
+  echo >&2 -e "rtx installed..."
+elif [[ -n ${ASDF_DIR-} ]]; then
+  warn "asdf installed, but deprecated. Consider switching over to rtx."
+else
+  warn "Neither rtx nor asdf is installed. "
   exit 1
-}
+fi
 
 # install asdf dependencies
 echo "installing asdf tooling with scripts/install-asdf-plugins.sh..."
