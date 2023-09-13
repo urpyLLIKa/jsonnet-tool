@@ -372,6 +372,7 @@ linters-settings:
 linters:
   enable-all: true
   disable:  # List of disabled linters is sorted in an alphabetical order.
+    - depguard
     - execinquery
     - exhaustivestruct  # This linter has been deprecated.
     - exhaustruct       # Replacement for the `exhaustivestruct` linter.
