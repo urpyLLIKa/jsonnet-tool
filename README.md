@@ -87,6 +87,99 @@ $ cat file.jsonnet.sha256sum
 $ sha256sum --check --status <file.jsonnet.sha256sum
 ```
 
+## `jsonnet-tool test`
+
+This tool allows for Jsonnet manifested output to be tested against fixture files.
+
+The term "manitest" is a portmanteau of "manifest" and "test".
+
+Each test case is kept in a file with the `.manitest.jsonnet` suffix.
+
+```jsonnet
+{
+  // Each test case has an arbitrary name
+  testcase1: {
+    actual: a_function_being_tested(),
+    expectJSON: './fixtures/test1.testcase1.json',
+  },
+  // Each test case has an arbitrary name
+  testcase2: {
+    actual: std.manifestYamlDoc({ hello: 'world' }),
+    expectYAML: './fixtures/test1.testcase2.yaml',
+  },
+}
+```
+
+### Expectation Matchers
+
+At present, two types of expectation matchers are available:
+
+1. `expectJSON` will match the actual value against a JSON fixture file.
+1. `expectYAML` will match the actual value against a YAML fixture file.
+1. Additional expectation matchers will be added an necessary.
+
+```console
+$ cat examples/tests/test1.manitest.jsonnet
+{ ... }
+$ jsonnet-tool test examples/tests/test1.manitest.jsonnet
+▶️  Executing manitest examples/tests/test1.manitest.jsonnet
+  ✔️  testcase1
+  ✔️  testcase2
+  Completed examples/tests/test1.manitest.jsonnet
+```
+
+### Caching
+
+Jsonnet test performance can be greatly improved by caching results. The `jsonnet-tool test` harness will analyze which files and fixtures,
+including all dependencies imported via `import`, `importstr`, `importbin` etc and, if the none of the files have changes, skip them from
+the test run.
+
+Since `jsonnet` is hermitic, meaning that the output is always the same if the input and files are the same, this is a safe operation.
+
+Caching can be enabled with the `--cache` flag.
+
+```
+$ time jsonnet-tool test --cache examples/tests/test1.manitest.jsonnet
+▶️  Executing manitest examples/tests/test1.manitest.jsonnet
+  ✔️  examples/tests/test1.manitest.jsonnet (all tests) (cached)
+  Completed examples/tests/test1.manitest.jsonnet
+./jsonnet-tool test examples/tests/test1.manitest.jsonnet --cache  0.00s user 0.01s system 2% cpu 0.593 total
+```
+
+### Diffing
+
+`jsonnet-tool test` will include color-coded diff comparing the actual and expected values.
+
+```
+$ jsonnet-tool test  examples/tests/test1.manitest.jsonnet
+▶️  Executing manitest examples/tests/test2.manitest.jsonnet
+  ❌  testcase1 failed      examples/tests/fixtures/test1.testcase1.json
+    {
+      "bad": "field",
+      "hello": "world"
+    }
+
+  ✔️  testcase2
+  Failed examples/tests/test2.manitest.jsonnet 2 test(s) completed with 1 failure(s)
+```
+
+### Rewriting Fixtures
+
+When performing large refactors, it can sometimes be preferable to simply rewrite all fixtures and carefully review the changes
+instead of manually updating each fixture.
+
+`jsonnet-tool test` can perform this, using the `--write-fixtures` option.
+
+```
+$ jsonnet-tool test  examples/tests/test1.manitest.jsonnet --write-fixtures
+▶️  Executing manitest examples/tests/test1.manitest.jsonnet
+  ✔️  testcase1
+  ✔️  testcase2
+  Completed examples/tests/test1.manitest.jsonnet
+$ git diff
+# compare output and, if correct, commit the change
+```
+
 ## Examples
 
 Check the [`examples/`](examples/) directory for examples of files suitable for `jsonnet-tool`.
