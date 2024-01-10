@@ -260,6 +260,7 @@ linters-settings:
     # Available rules: https://github.com/securego/gosec#available-rules
     excludes:
       - G307
+      - G306
 
   gosimple:
     go: "1.16"

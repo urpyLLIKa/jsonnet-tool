@@ -3,3 +3,4 @@ dist/
 node_modules
 dist/
 test_out
+.jsonnet-tool-test-cache.json
