@@ -71,26 +71,52 @@ Each test case is kept in a file with the `.manitest.jsonnet` suffix.
 
 ```jsonnet
 {
-  // Each test case has an arbitrary name
-  testcase1: {
+  // Test case using a JSON fixture
+  testcase1: function() {
     actual: a_function_being_tested(),
+
+    // Compare the output of actual to the JSON
+    // in the named file...
     expectJSON: './fixtures/test1.testcase1.json',
   },
-  // Each test case has an arbitrary name
-  testcase2: {
+
+  // Test case using a YAML fixture
+  testcase2: function() {
     actual: std.manifestYamlDoc({ hello: 'world' }),
+
+    // Compare the output of actual to the YAML
+    // in the named file...
     expectYAML: './fixtures/test1.testcase2.yaml',
+  },
+
+  // Test case using a plain text fixture
+  testcase3: function() {
+    actual: generateIniFile(),
+
+    // Compare the output of actual to the text
+    // in the named file...
+    expectPlainText: './fixtures/test1.testcase2.ini',
+  },
+
+  // No fixtures...
+  testcase4: function() {
+    actual: { hello: world },
+
+    // Compare the output of actual to the JSON value
+    expect: { hello: world },
   },
 }
 ```
 
 ### Expectation Matchers
 
-At present, two types of expectation matchers are available:
+At present, four types of expectation matchers are available:
 
 1. `expectJSON` will match the actual value against a JSON fixture file.
 1. `expectYAML` will match the actual value against a YAML fixture file.
-1. Additional expectation matchers will be added an necessary.
+1. `expectPlainText` will match the actual value against a plain text fixture file.
+1. `expect` will match the actual value against arbitrary JSON without using a fixture file. Unless the expectation is
+   trivial, this match should be avoided.
 
 ```console
 $ cat examples/tests/test1.manitest.jsonnet
@@ -108,7 +134,7 @@ Jsonnet test performance can be greatly improved by caching results. The `jsonne
 including all dependencies imported via `import`, `importstr`, `importbin` etc and, if the none of the files have changes, skip them from
 the test run.
 
-Since `jsonnet` is hermitic, meaning that the output is always the same if the input and files are the same, this is a safe operation.
+Since `jsonnet` is hermetic, meaning that the output is always the same if the input and files are the same, this is a safe operation.
 
 Caching can be enabled with the `--cache` flag.
 

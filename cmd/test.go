@@ -3,9 +3,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"os"
-	"path"
-	"strings"
 
 	"github.com/fatih/color"
 	jsonnet "github.com/google/go-jsonnet"
@@ -17,7 +14,8 @@ import (
 var testCommandJPaths []string
 var writeFixtures bool
 var cacheResults bool
-var wholeDir bool
+var jsonnetExtVars map[string]string
+var emitAllTraces bool
 
 func init() {
 	rootCmd.AddCommand(testCommand)
@@ -37,9 +35,14 @@ func init() {
 		"Cache tests for unchanged files to improve test speed",
 	)
 
+	testCommand.PersistentFlags().StringToStringVarP(
+		&jsonnetExtVars, "ext-str", "V", map[string]string{},
+		"Provide an external value as a string to jsonnet",
+	)
+
 	testCommand.PersistentFlags().BoolVarP(
-		&wholeDir, "dir", "d", false,
-		"Run all manitest declarations in directory",
+		&emitAllTraces, "all-traces", "T", false,
+		"Emit all traces. By default, only traces for failed tests will be emitted",
 	)
 }
 
@@ -48,8 +51,13 @@ var testCommand = &cobra.Command{
 	Short: "Run jsonnet tests",
 	Args:  cobra.MinimumNArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		reporterVisitor := &manitest.ReporterVisitor{}
+		traceVisitor := manitest.NewTraceVisitor()
+		reporterVisitor := &manitest.ReporterVisitor{
+			EmitAllTraces: emitAllTraces,
+			Args:          args,
+		}
 		visitors := []manitest.TestVisitor{
+			traceVisitor,
 			reporterVisitor,
 		}
 
@@ -58,6 +66,11 @@ var testCommand = &cobra.Command{
 		}
 
 		vm := jsonnet.MakeVM()
+		for k, v := range jsonnetExtVars {
+			vm.ExtVar(k, v)
+		}
+
+		vm.SetTraceOut(traceVisitor)
 		vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
 		vm.Importer(&jsonnet.FileImporter{
 			JPaths: testCommandJPaths,
@@ -84,6 +97,9 @@ var testCommand = &cobra.Command{
 		visitor := &manitest.MultiVisitor{Visitors: visitors}
 		runner := manitest.NewTestRunner(vm, visitor)
 
+		// Add required natives
+		runner.RegisterNatives()
+
 		err := runTests(runner, args)
 		if err != nil {
 			return fmt.Errorf("test failed: %w", err)
@@ -96,7 +112,7 @@ var testCommand = &cobra.Command{
 			}
 		}
 
-		err = visitor.Complete()
+		err = visitor.AllTestsCompleted()
 		if err != nil {
 			log.Printf("visitor failed: %v\n", err)
 		}
@@ -108,37 +124,10 @@ var testCommand = &cobra.Command{
 // Given a test runner, run the tests.
 func runTests(runner *manitest.TestRunner, args []string) error {
 	for _, a := range args {
-		if wholeDir {
-			err := runDirTests(runner, a)
-			if err != nil {
-				return fmt.Errorf("failed to run tests in %s: %w", a, err)
-			}
-		} else {
-			err := runner.RunTest(a)
+		err := runner.RunTestFile(a)
 
-			if err != nil {
-				return fmt.Errorf("failed to run tests in %s: %w", a, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func runDirTests(runner *manitest.TestRunner, arg string) error {
-	files, err := os.ReadDir(arg)
-	if err != nil {
-		return fmt.Errorf("failed to list files in %s: %w", arg, err)
-	}
-
-	for _, file := range files {
-		if file.Type().IsRegular() && strings.HasSuffix(file.Name(), ".manitest.jsonnet") {
-			fileName := path.Join(arg, file.Name())
-			err := runner.RunTest(fileName)
-
-			if err != nil {
-				return fmt.Errorf("failed to test %s: %w", fileName, err)
-			}
+		if err != nil {
+			return fmt.Errorf("failed to run tests in %s: %w", a, err)
 		}
 	}
 

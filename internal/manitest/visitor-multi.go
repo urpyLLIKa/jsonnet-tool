@@ -10,9 +10,9 @@ type MultiVisitor struct {
 
 var _ TestVisitor = &MultiVisitor{}
 
-func (mv *MultiVisitor) StartTestFile(fileName string) error {
+func (mv *MultiVisitor) TestFileStarted(fileName string) error {
 	for _, v := range mv.Visitors {
-		err := v.StartTestFile(fileName)
+		err := v.TestFileStarted(fileName)
 		if err != nil {
 			return fmt.Errorf("visitor failed: %w", err)
 		}
@@ -21,9 +21,9 @@ func (mv *MultiVisitor) StartTestFile(fileName string) error {
 	return nil
 }
 
-func (mv *MultiVisitor) TestFileComplete(fileName string, allSuccessful bool) error {
+func (mv *MultiVisitor) TestFileCompleted(fileName string, allSuccessful bool) error {
 	for _, v := range mv.Visitors {
-		err := v.TestFileComplete(fileName, allSuccessful)
+		err := v.TestFileCompleted(fileName, allSuccessful)
 		if err != nil {
 			return fmt.Errorf("visitor failed: %w", err)
 		}
@@ -32,9 +32,9 @@ func (mv *MultiVisitor) TestFileComplete(fileName string, allSuccessful bool) er
 	return nil
 }
 
-func (mv *MultiVisitor) StartTestCase(fileName string, testcase string) error {
+func (mv *MultiVisitor) TestCaseManifestationStarted(fileName string, testcase string) error {
 	for _, v := range mv.Visitors {
-		err := v.StartTestCase(fileName, testcase)
+		err := v.TestCaseManifestationStarted(fileName, testcase)
 		if err != nil {
 			return fmt.Errorf("visitor failed: %w", err)
 		}
@@ -43,9 +43,9 @@ func (mv *MultiVisitor) StartTestCase(fileName string, testcase string) error {
 	return nil
 }
 
-func (mv *MultiVisitor) TestCaseComplete(fileName string, testcase string, result *TestCaseResult) error {
+func (mv *MultiVisitor) TestCaseManifestationCompleted(fileName string, testcase string) error {
 	for _, v := range mv.Visitors {
-		err := v.TestCaseComplete(fileName, testcase, result)
+		err := v.TestCaseManifestationCompleted(fileName, testcase)
 		if err != nil {
 			return fmt.Errorf("visitor failed: %w", err)
 		}
@@ -54,9 +54,9 @@ func (mv *MultiVisitor) TestCaseComplete(fileName string, testcase string, resul
 	return nil
 }
 
-func (mv *MultiVisitor) Delta(fileName string, testcase string, fixturePath string, canonicalActual string, canonicalExpected string) error {
+func (mv *MultiVisitor) TestCaseEvaluationCompleted(fileName string, testcase string, result *TestCaseResult) error {
 	for _, v := range mv.Visitors {
-		err := v.Delta(fileName, testcase, fixturePath, canonicalActual, canonicalExpected)
+		err := v.TestCaseEvaluationCompleted(fileName, testcase, result)
 		if err != nil {
 			return fmt.Errorf("visitor failed: %w", err)
 		}
@@ -65,9 +65,20 @@ func (mv *MultiVisitor) Delta(fileName string, testcase string, fixturePath stri
 	return nil
 }
 
-func (mv *MultiVisitor) CachedResult(fileName string) (*TestCaseResult, error) {
+func (mv *MultiVisitor) TestCaseEvaluationDelta(fileName string, testcase string, fixturePath string, canonicalActual string, canonicalExpected string) error {
 	for _, v := range mv.Visitors {
-		result, err := v.CachedResult(fileName)
+		err := v.TestCaseEvaluationDelta(fileName, testcase, fixturePath, canonicalActual, canonicalExpected)
+		if err != nil {
+			return fmt.Errorf("visitor failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (mv *MultiVisitor) CachedTestCaseResultLookup(fileName string) (*TestCaseResult, error) {
+	for _, v := range mv.Visitors {
+		result, err := v.CachedTestCaseResultLookup(fileName)
 		if err != nil {
 			return nil, fmt.Errorf("visitor failed: %w", err)
 		}
@@ -81,9 +92,9 @@ func (mv *MultiVisitor) CachedResult(fileName string) (*TestCaseResult, error) {
 	return nil, nil
 }
 
-func (mv *MultiVisitor) Complete() error {
+func (mv *MultiVisitor) AllTestsCompleted() error {
 	for _, v := range mv.Visitors {
-		err := v.Complete()
+		err := v.AllTestsCompleted()
 		if err != nil {
 			return fmt.Errorf("visitor failed: %w", err)
 		}
