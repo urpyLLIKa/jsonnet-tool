@@ -61,32 +61,6 @@ $ jsonnet-tool render \
     file.jsonnet
 ```
 
-### `jsonnet-tool checksum`
-
-Checksum will recursively parse imports in a jsonnet file and generate a full import tree, then output sha256 hashes for the entire tree
-in a format that can be consumed by the sha256sum utility.
-
-This is useful for caching jsonnet files.
-
-```console
-$ cat file.jsonnet
-local stageGroupMapping = (import 'gitlab-metrics-config.libsonnet').stageGroupMapping;
-local serviceCatalog = import 'service-catalog/service-catalog.libsonnet';
-{}
-
-$ jsonnet-tool checksum \
-    -J . -J ../libsonnet -J ../metrics-catalog/ -J ../vendor -J ../services \
-    file.jsonnet >file.jsonnet.sha256sum
-
-$ cat file.jsonnet.sha256sum
-0007482aebcdf09ed0798a499118f31d40ca244c71bd89a9ff9c947e26ed71a0  ../libsonnet/saturation-monitoring/shard_cpu.libsonnet
-047b0b518845b0c38f6775a4e3040c08c3ce2bbfcdb870d9f30e3b190d1917e5  ../libsonnet/elasticlinkbuilder/index_catalog.libsonnet
-0599206409b75d4bd1c896ee2b865166eb516ab23bcf45d0fa60a398690b0692  ../metrics-catalog/services/woodhouse.jsonnet
-...
-
-$ sha256sum --check --status <file.jsonnet.sha256sum
-```
-
 ## `jsonnet-tool test`
 
 This tool allows for Jsonnet manifested output to be tested against fixture files.
