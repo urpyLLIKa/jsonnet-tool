@@ -2,6 +2,7 @@ package manitest
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"hash"
@@ -125,7 +126,7 @@ func (c *CacheManager) calculateHashSum(fileName string) (string, error) {
 		}
 	}
 
-	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 // listAllDependencies function will inspect a test and return a stable set of all unique dependencies
