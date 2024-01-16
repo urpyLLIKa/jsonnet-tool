@@ -3,7 +3,7 @@ module gitlab.com/gitlab-com/gl-infra/jsonnet-tool
 go 1.21
 
 require (
-	github.com/fatih/color v1.15.0
+	github.com/fatih/color v1.16.0
 	github.com/google/go-jsonnet v0.20.0
 	github.com/kr/text v0.1.0
 	github.com/sergi/go-diff v1.1.0
