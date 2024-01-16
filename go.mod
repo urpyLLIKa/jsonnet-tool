@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-com/gl-infra/jsonnet-tool
 
-go 1.21
+go 1.21.6
 
 require (
 	github.com/fatih/color v1.16.0
