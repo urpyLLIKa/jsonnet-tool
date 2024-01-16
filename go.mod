@@ -7,7 +7,7 @@ require (
 	github.com/google/go-jsonnet v0.20.0
 	github.com/kr/text v0.1.0
 	github.com/sergi/go-diff v1.1.0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
