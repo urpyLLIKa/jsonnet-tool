@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/google/go-jsonnet v0.20.0
 	github.com/kr/text v0.1.0
-	github.com/sergi/go-diff v1.1.0
+	github.com/sergi/go-diff v1.3.1
 	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
 )
