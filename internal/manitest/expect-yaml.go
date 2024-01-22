@@ -28,7 +28,7 @@ func (c *TestRunner) evaluateTestCaseYAML(fileName string, testcase string, t *T
 	fixtureFile, err := os.Open(fixturePath)
 	if err != nil {
 		canonicalActual, _ := canonicalYAML(actual)
-		_ = c.visitor.Delta(fileName, testcase, fixturePath, canonicalActual, "")
+		_ = c.visitor.TestCaseEvaluationDelta(fileName, testcase, fixturePath, canonicalActual, "")
 
 		return testCaseResultForError(fmt.Errorf("unable to open fixture %s: %w", fixturePath, err))
 	}
@@ -58,7 +58,7 @@ func (c *TestRunner) evaluateTestCaseYAML(fileName string, testcase string, t *T
 			return testCaseResultForError(fmt.Errorf("failed to manifest expected JSON %s: %w", fixturePath, err))
 		}
 
-		err = c.visitor.Delta(fileName, testcase, fixturePath, canonicalActual, canonicalExpected)
+		err = c.visitor.TestCaseEvaluationDelta(fileName, testcase, fixturePath, canonicalActual, canonicalExpected)
 		if err != nil {
 			return testCaseResultForError(fmt.Errorf("visitor failed: %w", err))
 		}

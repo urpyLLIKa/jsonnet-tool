@@ -4,26 +4,20 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
 )
 
 type WriterVisitor struct {
+	baseVisitor
 }
 
 var _ TestVisitor = &WriterVisitor{}
 
-func (rv *WriterVisitor) StartTestFile(fileName string) error                        { return nil }
-func (rv *WriterVisitor) TestFileComplete(fileName string, allSuccessful bool) error { return nil }
+func (rv *WriterVisitor) TestCaseEvaluationDelta(fileName string, testcase string, fixturePath string, canonicalActual string, canonicalExpected string) error {
+	// No fixture path? skip.
+	if fixturePath == "" {
+		return nil
+	}
 
-func (rv *WriterVisitor) StartTestCase(fileName string, testcase string) error {
-	return nil
-}
-
-func (rv *WriterVisitor) TestCaseComplete(fileName string, testcase string, result *TestCaseResult) error {
-	return nil
-}
-
-func (rv *WriterVisitor) Delta(fileName string, testcase string, fixturePath string, canonicalActual string, canonicalExpected string) error {
 	f, err := os.Create(fixturePath)
 	if err != nil {
 		return fmt.Errorf("unable to create file %s: %w", fixturePath, err)
@@ -31,10 +25,7 @@ func (rv *WriterVisitor) Delta(fileName string, testcase string, fixturePath str
 
 	defer f.Close()
 
-	if !strings.HasSuffix(canonicalActual, "\n") {
-		// Always add a newline at the end of the file...
-		canonicalActual = canonicalActual + "\n"
-	}
+	canonicalActual = normalizePlainTextString(canonicalActual)
 
 	w := bufio.NewWriter(f)
 
@@ -50,9 +41,3 @@ func (rv *WriterVisitor) Delta(fileName string, testcase string, fixturePath str
 
 	return nil
 }
-
-func (rv *WriterVisitor) CachedResult(fileName string) (*TestCaseResult, error) {
-	return nil, nil
-}
-
-func (rv *WriterVisitor) Complete() error { return nil }

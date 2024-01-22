@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/google/go-jsonnet"
+	"github.com/google/go-jsonnet/ast"
 )
 
 var errSetupTestFailed = errors.New("unable to execute test")
@@ -18,13 +19,68 @@ type TestRunner struct {
 	visitor TestVisitor
 }
 
-func (c *TestRunner) RunTest(fileName string) error {
-	cachedResult, err := c.visitor.CachedResult(fileName)
+const runTestsSnippet = `
+	local ts = import '%s';
+
+	local testStart = std.native('testStart');
+	local testCompleted = std.native('testCompleted');
+
+	std.foldl(
+		function(memo, k)
+			local f = ts[k];
+			memo {
+				[k]: testStart(k, {}) + testCompleted(k, f())
+			},
+		std.objectFields(ts),
+		{}
+	)
+`
+
+func (c *TestRunner) RegisterNatives() {
+	c.vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "testStart",
+		Params: ast.Identifiers{"testName", "passthrough"},
+		Func: func(s []interface{}) (interface{}, error) {
+			testName, ok := s[0].(string)
+			if !ok {
+				return nil, fmt.Errorf("testStart requires a string: %w", errTestFailed)
+			}
+
+			err := c.visitor.TestCaseManifestationStarted("", testName)
+			if err != nil {
+				return nil, fmt.Errorf("StartTestCaseEvaluation visitor failed: %w", errTestFailed)
+			}
+
+			return s[1], nil
+		},
+	})
+
+	c.vm.NativeFunction(&jsonnet.NativeFunction{
+		Name:   "testCompleted",
+		Params: ast.Identifiers{"testName", "testResult"},
+		Func: func(s []interface{}) (interface{}, error) {
+			testName, ok := s[0].(string)
+			if !ok {
+				return nil, fmt.Errorf("testStart requires a string: %w", errTestFailed)
+			}
+
+			err := c.visitor.TestCaseManifestationCompleted("", testName)
+			if err != nil {
+				return nil, fmt.Errorf("CompletedTestCaseEvaluation visitor failed: %w", errTestFailed)
+			}
+
+			return s[1], nil
+		},
+	})
+}
+
+func (c *TestRunner) RunTestFile(fileName string) error {
+	cachedResult, err := c.visitor.CachedTestCaseResultLookup(fileName)
 	if err != nil {
 		fmt.Printf("warning: cache lookup failed: %v", err)
 	}
 
-	err = c.visitor.StartTestFile(fileName)
+	err = c.visitor.TestFileStarted(fileName)
 	if err != nil {
 		log.Printf("warning: %v", err)
 	}
@@ -32,7 +88,7 @@ func (c *TestRunner) RunTest(fileName string) error {
 	allSuccessful := true
 
 	defer func() {
-		err2 := c.visitor.TestFileComplete(fileName, allSuccessful)
+		err2 := c.visitor.TestFileCompleted(fileName, allSuccessful)
 		if err2 != nil {
 			log.Printf("warning: %v", err)
 		}
@@ -40,13 +96,13 @@ func (c *TestRunner) RunTest(fileName string) error {
 
 	// Only skip successfully cached results...
 	if cachedResult != nil && cachedResult.Success {
-		_ = c.visitor.StartTestCase(fileName, "")
-		_ = c.visitor.TestCaseComplete(fileName, "", cachedResult)
+		_ = c.visitor.TestCaseManifestationStarted(fileName, "")
+		_ = c.visitor.TestCaseEvaluationCompleted(fileName, "", cachedResult)
 
 		return nil
 	}
 
-	testManifest, err := c.vm.EvaluateFile(fileName)
+	testManifest, err := c.vm.EvaluateAnonymousSnippet("testrunner.go", fmt.Sprintf(runTestsSnippet, fileName))
 	if err != nil {
 		return fmt.Errorf("failed to evaluate jsonnet: %w: %w", err, errSetupTestFailed)
 	}
@@ -92,26 +148,39 @@ func getSortedKeys(testResults TestCases) []string {
 }
 
 func (c *TestRunner) evaluateTestCase(fileName string, testcase string, t *TestCase) (bool, error) {
-	err := c.visitor.StartTestCase(fileName, testcase)
+	err := c.visitor.TestCaseManifestationStarted(fileName, testcase)
 	if err != nil {
 		return false, fmt.Errorf("visitor failed: %w", err)
 	}
 
-	var result *TestCaseResult
-	if t.ExpectJSON != nil {
-		result = c.evaluateTestCaseJSON(fileName, testcase, t)
-	} else if t.ExpectYAML != nil {
-		result = c.evaluateTestCaseYAML(fileName, testcase, t)
-	} else {
-		result = testCaseResultForError(fmt.Errorf("malformed test expectation: %w", errSetupTestFailed))
-	}
+	result := c.evaluateTestCaseType(fileName, testcase, t)
 
-	err = c.visitor.TestCaseComplete(fileName, testcase, result)
+	err = c.visitor.TestCaseEvaluationCompleted(fileName, testcase, result)
 	if err != nil {
 		return false, fmt.Errorf("visitor failed: %w", err)
 	}
 
 	return result.Success, nil
+}
+
+func (c *TestRunner) evaluateTestCaseType(fileName string, testcase string, t *TestCase) *TestCaseResult {
+	if t.ExpectJSON != nil {
+		return c.evaluateTestCaseJSON(fileName, testcase, t)
+	}
+
+	if t.ExpectYAML != nil {
+		return c.evaluateTestCaseYAML(fileName, testcase, t)
+	}
+
+	if t.ExpectPlainText != nil {
+		return c.evaluateTestCasePlainText(fileName, testcase, t)
+	}
+
+	if t.Expect != nil {
+		return c.evaluateTestCaseValue(fileName, testcase, t)
+	}
+
+	return testCaseResultForError(fmt.Errorf("malformed test expectation: %w", errSetupTestFailed))
 }
 
 func testCaseResultForError(err error) *TestCaseResult {

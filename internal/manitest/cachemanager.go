@@ -51,18 +51,32 @@ func (c *CacheManager) LoadCachedResults() error {
 	return nil
 }
 
+const evaluateTestFixturesSnippet = `
+	local ts = import '%s';
+
+	std.foldl(
+		function(memo, k)
+			local f = ts[k];
+			memo {
+				[k]: f() { actual:: null }
+			},
+		std.objectFields(ts),
+		{}
+	)
+`
+
 func (c *CacheManager) GetCachedResult(fileName string) (*bool, error) {
 	result, ok := c.cacheResults[fileName]
 	if !ok {
 		return nil, nil
 	}
 
-	hash, err := c.getHash(fileName)
+	h, err := c.getHash(fileName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate hash: %w", err)
 	}
 
-	if result.Hash == hash {
+	if result.Hash == h {
 		return &result.Success, nil
 	}
 
@@ -84,30 +98,30 @@ func (c *CacheManager) SaveCachedResults() error {
 }
 
 func (c *CacheManager) RecordResult(fileName string, success bool) error {
-	hash, err := c.getHash(fileName)
+	h, err := c.getHash(fileName)
 	if err != nil {
 		return err
 	}
 
-	c.cacheResults[fileName] = &CacheResult{Success: success, Hash: hash}
+	c.cacheResults[fileName] = &CacheResult{Success: success, Hash: h}
 
 	return nil
 }
 
 func (c *CacheManager) getHash(fileName string) (string, error) {
-	hash, ok := c.hashCache[fileName]
+	h, ok := c.hashCache[fileName]
 	if ok {
-		return hash, nil
+		return h, nil
 	}
 
-	hash, err := c.calculateHashSum(fileName)
+	h, err := c.calculateHashSum(fileName)
 	if err != nil {
 		return "", err
 	}
 
-	c.hashCache[fileName] = hash
+	c.hashCache[fileName] = h
 
-	return hash, nil
+	return h, nil
 }
 
 // calculateHashSum generates a unique hash based on the content of all files
@@ -115,18 +129,18 @@ func (c *CacheManager) getHash(fileName string) (string, error) {
 func (c *CacheManager) calculateHashSum(fileName string) (string, error) {
 	deps, err := c.listAllDependencies(fileName)
 	if err != nil {
-		return "", fmt.Errorf("failed to evaluate manitest: %w", err)
+		return "", fmt.Errorf("failed to list dependencies: %w", err)
 	}
 
-	hash := sha256.New()
+	h := sha256.New()
 	for _, fileName := range deps {
-		err = addFileForHashing(hash, fileName)
+		err = addFileForHashing(h, fileName)
 		if err != nil {
 			return "", fmt.Errorf("failed to hash: %s: %w", fileName, err)
 		}
 	}
 
-	return hex.EncodeToString(hash.Sum(nil)), nil
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // listAllDependencies function will inspect a test and return a stable set of all unique dependencies
@@ -136,10 +150,9 @@ func (c *CacheManager) listAllDependencies(fileName string) ([]string, error) {
 
 	results[fileName] = struct{}{}
 
-	// Remove the "actual" value for much faster evaluation
-	testManifest, err := c.vm.EvaluateAnonymousSnippet(fileName, "(import '"+fileName+"') { actual:: null }")
+	testManifest, err := c.vm.EvaluateAnonymousSnippet(fileName, fmt.Sprintf(evaluateTestFixturesSnippet, fileName))
 	if err != nil {
-		return nil, fmt.Errorf("failed to evaluate manitest: %w", err)
+		return nil, fmt.Errorf("failed to execute test: %w", err)
 	}
 
 	testResults := TestCases{}
@@ -155,13 +168,30 @@ func (c *CacheManager) listAllDependencies(fileName string) ([]string, error) {
 		if v.ExpectJSON != nil {
 			fixturePathJSON := path.Join(dir, *v.ExpectJSON)
 			results[fixturePathJSON] = struct{}{}
+
+			continue
 		}
 
 		if v.ExpectYAML != nil {
 			fixturePathYAML := path.Join(dir, *v.ExpectYAML)
-
 			results[fixturePathYAML] = struct{}{}
+
+			continue
 		}
+
+		if v.ExpectPlainText != nil {
+			fixturePathPlainText := path.Join(dir, *v.ExpectPlainText)
+			results[fixturePathPlainText] = struct{}{}
+
+			continue
+		}
+
+		if v.Expect != nil {
+			/* No fixture file */
+			continue
+		}
+
+		return nil, fmt.Errorf("unable to determine cache fixture: %w", errTestFailed)
 	}
 
 	deps, err := c.vm.FindDependencies("", []string{fileName})
