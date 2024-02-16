@@ -4,4 +4,4 @@ goreleaser 1.23.0 # datasource=github-releases depName=goreleaser/goreleaser
 pre-commit 3.6.0 # datasource=github-releases depName=pre-commit/pre-commit
 python system # use system python
 shellcheck 0.9.0 # datasource=github-releases depName=koalaman/shellcheck
-shfmt 3.7.0 # datasource=github-releases depName=mvdan/sh
+shfmt 3.8.0 # datasource=github-releases depName=mvdan/sh
