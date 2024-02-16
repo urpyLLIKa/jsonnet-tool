@@ -26,6 +26,7 @@ func TestReorderKeys(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			got := ReorderKeys(tt.yaml, tt.priorityKeys)
 
 			if !reflect.DeepEqual(got, tt.want) {
