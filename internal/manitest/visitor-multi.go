@@ -32,6 +32,17 @@ func (mv *MultiVisitor) TestFileCompleted(fileName string, allSuccessful bool) e
 	return nil
 }
 
+func (mv *MultiVisitor) TestFileInvalid(name string, err error) error {
+	for _, v := range mv.Visitors {
+		err2 := v.TestFileInvalid(name, err)
+		if err2 != nil {
+			return fmt.Errorf("visitor failed: %w", err2)
+		}
+	}
+
+	return nil
+}
+
 func (mv *MultiVisitor) TestCaseManifestationStarted(fileName string, testcase string) error {
 	for _, v := range mv.Visitors {
 		err := v.TestCaseManifestationStarted(fileName, testcase)
@@ -70,6 +81,17 @@ func (mv *MultiVisitor) TestCaseEvaluationDelta(fileName string, testcase string
 		err := v.TestCaseEvaluationDelta(fileName, testcase, fixturePath, canonicalActual, canonicalExpected)
 		if err != nil {
 			return fmt.Errorf("visitor failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (mv *MultiVisitor) TestCaseInvalid(name string, testcase string, err error) error {
+	for _, v := range mv.Visitors {
+		err2 := v.TestCaseInvalid(name, testcase, err)
+		if err2 != nil {
+			return fmt.Errorf("visitor failed: %w", err2)
 		}
 	}
 

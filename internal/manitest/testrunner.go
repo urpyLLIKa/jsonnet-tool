@@ -7,6 +7,8 @@ import (
 	"log"
 	"slices"
 
+	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/exitcode"
+
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 )
@@ -74,16 +76,14 @@ func (c *TestRunner) RegisterNatives() {
 	})
 }
 
-func (c *TestRunner) RunTestFile(fileName string) error {
+func (c *TestRunner) RunTestFile(fileName string) {
 	cachedResult, err := c.visitor.CachedTestCaseResultLookup(fileName)
 	if err != nil {
 		fmt.Printf("warning: cache lookup failed: %v", err)
 	}
 
 	err = c.visitor.TestFileStarted(fileName)
-	if err != nil {
-		log.Printf("warning: %v", err)
-	}
+	warnVisitor(err)
 
 	allSuccessful := true
 
@@ -99,19 +99,17 @@ func (c *TestRunner) RunTestFile(fileName string) error {
 		_ = c.visitor.TestCaseManifestationStarted(fileName, "")
 		_ = c.visitor.TestCaseEvaluationCompleted(fileName, "", cachedResult)
 
-		return nil
+		return
 	}
 
-	testManifest, err := c.vm.EvaluateAnonymousSnippet("testrunner.go", fmt.Sprintf(runTestsSnippet, fileName))
+	testResults, err := c.obtainTestCases(fileName)
 	if err != nil {
-		return fmt.Errorf("failed to evaluate jsonnet: %w: %w", err, errSetupTestFailed)
-	}
+		allSuccessful = false
 
-	testResults := TestCases{}
+		err = c.visitor.TestFileInvalid(fileName, err)
+		warnVisitor(err)
 
-	err = json.Unmarshal([]byte(testManifest), &testResults)
-	if err != nil {
-		return fmt.Errorf("failed to evaluate jsonnet: %w: %w", err, errSetupTestFailed)
+		return
 	}
 
 	sortedKeys := getSortedKeys(testResults)
@@ -125,11 +123,34 @@ func (c *TestRunner) RunTestFile(fileName string) error {
 		}
 
 		if err != nil {
-			return err
+			allSuccessful = false
+
+			err = c.visitor.TestFileInvalid(fileName, err)
+			warnVisitor(err)
 		}
 	}
+}
 
-	return nil
+func warnVisitor(err error) {
+	if err != nil {
+		log.Printf("warning: %v", err)
+	}
+}
+
+func (c *TestRunner) obtainTestCases(fileName string) (TestCases, error) {
+	testManifest, err := c.vm.EvaluateAnonymousSnippet("testrunner.go", fmt.Sprintf(runTestsSnippet, fileName))
+	if err != nil {
+		return nil, fmt.Errorf("jsonnet evaluation failed: %w", err)
+	}
+
+	testResults := TestCases{}
+
+	err = json.Unmarshal([]byte(testManifest), &testResults)
+	if err != nil {
+		return nil, fmt.Errorf("manifest unmarshal failed: %w", err)
+	}
+
+	return testResults, nil
 }
 
 // Return the keys from the map, sorted.
@@ -180,7 +201,7 @@ func (c *TestRunner) evaluateTestCaseType(fileName string, testcase string, t *T
 		return c.evaluateTestCaseValue(fileName, testcase, t)
 	}
 
-	return testCaseResultForError(fmt.Errorf("malformed test expectation: %w", errSetupTestFailed))
+	return testCaseResultForError(fmt.Errorf("malformed test expectation: %w: %w", exitcode.Invalid(), errSetupTestFailed))
 }
 
 func testCaseResultForError(err error) *TestCaseResult {

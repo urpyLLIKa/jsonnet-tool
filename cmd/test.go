@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/fatih/color"
 	jsonnet "github.com/google/go-jsonnet"
@@ -46,90 +45,90 @@ func init() {
 	)
 }
 
-var testCommand = &cobra.Command{
-	Use:   "test",
-	Short: "Run jsonnet tests",
-	Args:  cobra.MinimumNArgs(0),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		traceVisitor := manitest.NewTraceVisitor()
-		reporterVisitor := &manitest.ReporterVisitor{
-			EmitAllTraces: emitAllTraces,
-			Args:          args,
-		}
-		visitors := []manitest.TestVisitor{
-			traceVisitor,
-			reporterVisitor,
-		}
+var testCommand = NewTestCommand()
 
-		if writeFixtures {
-			visitors = append(visitors, &manitest.WriterVisitor{})
-		}
+func newTestCommandRun(cmd *cobra.Command, args []string) error {
+	traceVisitor := manitest.NewTraceVisitor(cmd.OutOrStdout(), cmd.ErrOrStderr())
+	reporterVisitor := manitest.NewReporterVisitor(emitAllTraces, args, cmd.OutOrStdout(), cmd.ErrOrStderr())
 
-		vm := jsonnet.MakeVM()
-		for k, v := range jsonnetExtVars {
-			vm.ExtVar(k, v)
-		}
+	visitors := []manitest.TestVisitor{
+		traceVisitor,
+		reporterVisitor,
+	}
 
-		vm.SetTraceOut(traceVisitor)
-		vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
-		vm.Importer(&jsonnet.FileImporter{
-			JPaths: testCommandJPaths,
-		})
+	if writeFixtures {
+		visitors = append(visitors, &manitest.WriterVisitor{})
+	}
 
-		var cacheManager *manitest.CacheManager
-		if cacheResults {
-			cacheManager = manitest.NewCacheManager(vm)
-			err := cacheManager.LoadCachedResults()
-			if err != nil {
-				log.Printf("failed to load cached test results: %v\n", err)
-			}
+	vm := jsonnet.MakeVM()
+	for k, v := range jsonnetExtVars {
+		vm.ExtVar(k, v)
+	}
 
-			cacheVisitor := manitest.NewCacheVisitor(vm, cacheManager)
-			visitors = append(visitors, cacheVisitor)
-		}
+	vm.SetTraceOut(traceVisitor)
+	vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
+	vm.Importer(&jsonnet.FileImporter{
+		JPaths: testCommandJPaths,
+	})
 
-		// ExitCodeVisitor should always go last
-		// so that it doesn't exit before other visitors
-		// have run
-		exitCodeVisitor := &manitest.ExitCodeVisitor{}
-		visitors = append(visitors, exitCodeVisitor)
+	var cacheManager *manitest.CacheManager
+	if cacheResults {
+		cacheManager = manitest.NewCacheManager(vm)
 
-		visitor := &manitest.MultiVisitor{Visitors: visitors}
-		runner := manitest.NewTestRunner(vm, visitor)
-
-		// Add required natives
-		runner.RegisterNatives()
-
-		err := runTests(runner, args)
+		err := cacheManager.LoadCachedResults()
 		if err != nil {
-			return fmt.Errorf("test failed: %w", err)
+			_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "failed to load cached test results: %v\n", err)
 		}
 
-		if cacheManager != nil {
-			err = cacheManager.SaveCachedResults()
-			if err != nil {
-				log.Printf("failed to save cached test results: %v\n", err)
-			}
-		}
+		cacheVisitor := manitest.NewCacheVisitor(vm, cacheManager)
+		visitors = append(visitors, cacheVisitor)
+	}
 
-		err = visitor.AllTestsCompleted()
+	// ExitCodeVisitor should always go last
+	// so that it doesn't exit before other visitors
+	// have run
+	exitCodeVisitor := &manitest.ExitCodeVisitor{}
+	visitors = append(visitors, exitCodeVisitor)
+
+	visitor := &manitest.MultiVisitor{Visitors: visitors}
+	runner := manitest.NewTestRunner(vm, visitor)
+
+	// Add required natives
+	runner.RegisterNatives()
+
+	// No errors as they are collected by the runner
+	runTests(runner, args)
+
+	if cacheManager != nil {
+		err := cacheManager.SaveCachedResults()
 		if err != nil {
-			log.Printf("visitor failed: %v\n", err)
-		}
-
-		return nil
-	},
-}
-
-// Given a test runner, run the tests.
-func runTests(runner *manitest.TestRunner, args []string) error {
-	for _, a := range args {
-		err := runner.RunTestFile(a)
-
-		if err != nil {
-			return fmt.Errorf("failed to run tests in %s: %w", a, err)
+			fmt.Fprintf(cmd.ErrOrStderr(), "failed to save cached test results: %v\n", err)
 		}
 	}
 
+	err := visitor.AllTestsCompleted()
+	if err != nil {
+		// AllTestsCompleted passes the error back to the caller, which may control the termination
+		// of the program.
+		return fmt.Errorf("visitor returned error: %w", err)
+	}
+
 	return nil
+}
+
+func NewTestCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:              "test",
+		Short:            "Run jsonnet tests",
+		Args:             cobra.MinimumNArgs(1),
+		PersistentPreRun: silenceErrorsUsage,
+		RunE:             newTestCommandRun,
+	}
+}
+
+// Given a test runner, run the tests.
+func runTests(runner *manitest.TestRunner, args []string) {
+	for _, a := range args {
+		runner.RunTestFile(a)
+	}
 }

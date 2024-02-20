@@ -3,6 +3,7 @@ package manitest
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"time"
@@ -24,16 +25,23 @@ type ReporterVisitor struct {
 	// All the positional args passed to the test command
 	Args []string
 
-	success int
-	total   int
-	fail    int
-	cached  bool
+	passes      int
+	total       int
+	fail        int
+	invalid     int
+	cached      bool
+	fileInvalid bool
 
 	manifestStart time.Time
 
 	totalFiles        int
+	totalFilesPassed  int
 	totalFilesCached  int
 	totalFileFailures int
+	totalFileInvalid  int
+
+	stdout io.Writer
+	stderr io.Writer
 
 	baseVisitor
 }
@@ -41,20 +49,64 @@ type ReporterVisitor struct {
 var _ TestVisitor = &ReporterVisitor{}
 
 func (rv *ReporterVisitor) TestFileStarted(fileName string) error {
-	rv.success = 0
+	rv.passes = 0
 	rv.total = 0
 	rv.fail = 0
+	rv.invalid = 0
 	rv.cached = false
+	rv.fileInvalid = false
 
-	fmt.Printf("▶️  Executing test file %s\n", fileName)
+	_, _ = fmt.Fprintf(rv.stdout, "▶️  Executing test file %s\n", fileName)
 
 	return nil
 }
 
-func (rv *ReporterVisitor) TestFileCompleted(fileName string, allSuccessful bool) error {
+func (rv *ReporterVisitor) TestFileInvalid(name string, err error) error {
+	_, _ = fmt.Fprintf(rv.stdout, "💥  Invalid test %s\n%v\n", name, err)
+	rv.fileInvalid = true
+
+	return nil
+}
+
+func (rv *ReporterVisitor) TestFileCompleted(fileName string, _ bool) error {
 	rv.totalFiles = rv.totalFiles + 1
-	if !allSuccessful {
+
+	reportElements := []string{
+		color.HiWhiteString("%d %s tested", rv.total, plural(rv.totalFiles, "test", "files")),
+		color.HiBlueString("%d %s passed", rv.passes, plural(rv.totalFilesPassed, "test", "tests")),
+	}
+
+	if rv.fail > 0 {
+		reportElements = append(reportElements,
+			color.HiYellowString("%d %s failed", rv.fail, plural(rv.fail, "test", "tests")),
+		)
+	}
+
+	if rv.invalid > 0 {
+		reportElements = append(reportElements,
+			color.HiRedString("%d %s invalid", rv.invalid, plural(rv.invalid, "test", "tests")),
+		)
+	}
+
+	if rv.cached {
+		reportElements = append(reportElements,
+			color.HiBlueString("cached"),
+		)
+	}
+
+	_, _ = fmt.Printf("\r  %s\n\n", strings.Join(reportElements, ", "))
+
+	if rv.fail > 0 || rv.invalid > 0 || rv.fileInvalid {
+		rerunCommand := rv.getRerunCommand(fileName)
+		_, _ = fmt.Fprintln(rv.stdout, text.Indent(rerunCommand, "      "))
+	}
+
+	if rv.invalid > 0 || rv.fileInvalid {
+		rv.totalFileInvalid = rv.totalFileInvalid + 1
+	} else if rv.fail > 0 {
 		rv.totalFileFailures = rv.totalFileFailures + 1
+	} else {
+		rv.totalFilesPassed = rv.totalFilesPassed + 1
 	}
 
 	if rv.cached {
@@ -62,18 +114,11 @@ func (rv *ReporterVisitor) TestFileCompleted(fileName string, allSuccessful bool
 		return nil
 	}
 
-	if rv.fail > 0 {
-		fmt.Printf("\r  %s %s %d test(s) completed with %d failure(s)\n\n", color.HiRedString("Failed"), fileName, rv.total, rv.fail)
-
-		rerunCommand := rv.getRerunCommand(fileName)
-		fmt.Println(text.Indent(rerunCommand, "      "))
-	}
-
 	return nil
 }
 
 func (rv *ReporterVisitor) TestCaseManifestationStarted(fileName string, testcase string) error {
-	fmt.Printf("  ➡️  %s manifesting...", testcase)
+	_, _ = fmt.Fprintf(rv.stdout, "  ➡️  %s manifesting...", testcase)
 
 	rv.manifestStart = time.Now()
 
@@ -83,7 +128,7 @@ func (rv *ReporterVisitor) TestCaseManifestationStarted(fileName string, testcas
 func (rv *ReporterVisitor) TestCaseManifestationCompleted(fileName string, testcase string) error {
 	duration := time.Since(rv.manifestStart)
 
-	fmt.Printf("\r  ➡️  %s manifestation completed in %dms\n", testcase, int64(duration/time.Millisecond))
+	_, _ = fmt.Fprintf(rv.stdout, "\r  ➡️  %s manifestation completed in %dms\n", testcase, int64(duration/time.Millisecond))
 
 	return nil
 }
@@ -93,9 +138,9 @@ func (rv *ReporterVisitor) TestCaseEvaluationCompleted(fileName string, testcase
 		rv.cached = true
 
 		if result.Success {
-			fmt.Printf("\r  ✔️  %s (all tests) (cached)\n", fileName)
+			_, _ = fmt.Fprintf(rv.stdout, "\r  ✔️  %s (all tests) (cached)\n", fileName)
 		} else {
-			fmt.Printf("\r  ⨯  %s (all tests) (cached)\n", fileName)
+			_, _ = fmt.Fprintf(rv.stdout, "\r  ⨯  %s (all tests) (cached)\n", fileName)
 		}
 
 		return nil
@@ -104,37 +149,43 @@ func (rv *ReporterVisitor) TestCaseEvaluationCompleted(fileName string, testcase
 	rv.total = rv.total + 1
 
 	if result.Success {
-		rv.success = rv.success + 1
+		rv.passes = rv.passes + 1
 
-		fmt.Printf("\r  ✔️  %-20s %-40s\n", testcase, "")
+		_, _ = fmt.Fprintf(rv.stdout, "\r  ✔️  %-20s %-40s\n", testcase, "")
 	} else {
 		rv.fail = rv.fail + 1
 
-		fmt.Printf("\r  ❌  %-6s %-20s %-40s\n", testcase, color.HiRedString("failed"), color.YellowString(result.FixturePath))
-		fmt.Printf("\r      %s\n", result.Error)
+		_, _ = fmt.Fprintf(rv.stdout, "\r  ❌  %-6s %-20s %-40s\n", testcase, color.HiRedString("failed"), color.YellowString(result.FixturePath))
+		_, _ = fmt.Fprintf(rv.stdout, "\r      %s\n", result.Error)
 
 		expected := normalizePlainTextString(result.Expected)
 		actual := normalizePlainTextString(result.Actual)
 
 		if expected != actual {
-			prettyDiff := generatePrettyDiff(result, expected, actual)
+			prettyDiff := rv.generatePrettyDiff(result, expected, actual)
 
-			fmt.Println(text.Indent(prettyDiff, "      "))
-			fmt.Println()
+			_, _ = fmt.Fprintf(rv.stdout, "%s\n\n", text.Indent(prettyDiff, "      "))
 		}
 	}
 
 	// If there's a trace and either we're showing all traces, or this test failed
 	// show the trace.
 	if result.Trace != "" && (!result.Success || rv.EmitAllTraces) {
-		fmt.Println(text.Indent(result.Trace, "      "))
+		_, _ = fmt.Fprintln(rv.stdout, text.Indent(result.Trace, "      "))
 	}
 
 	return nil
 }
 
+func (rv *ReporterVisitor) TestCaseInvalid(name string, testcase string, err error) error {
+	rv.invalid = rv.invalid + 1
+	_, _ = fmt.Fprintf(rv.stdout, "💥  Invalid test case %s\n%v\n", testcase, err)
+
+	return nil
+}
+
 // generatePrettyDiff will generate a diff for display.
-func generatePrettyDiff(result *TestCaseResult, expected, actual string) string {
+func (rv *ReporterVisitor) generatePrettyDiff(result *TestCaseResult, expected, actual string) string {
 	edits := myers.ComputeEdits(span.URIFromPath(result.FixturePath), expected, actual)
 	diff := fmt.Sprint(gotextdiff.ToUnified(result.FixturePath, result.FixturePath, expected, edits))
 
@@ -167,23 +218,48 @@ func generatePrettyDiff(result *TestCaseResult, expected, actual string) string 
 }
 
 func (rv *ReporterVisitor) AllTestsCompleted() error {
-	if rv.totalFileFailures > 0 {
-		fmt.Printf("\n\n  ❌ %s: %d file(s) tested, %d cached, %s\n\n",
-			color.HiRedString("Test run completed. Some tests failed."),
-			rv.totalFiles,
-			rv.totalFilesCached,
-			color.YellowString(fmt.Sprintf("%d file(s) failed", rv.totalFileFailures)),
-		)
+	finalReportElements := []string{
+		color.HiWhiteString("%d %s tested", rv.totalFiles, plural(rv.totalFiles, "file", "files")),
+		color.HiBlueString("%d %s passed", rv.totalFilesPassed, plural(rv.totalFilesPassed, "file", "files")),
+	}
+	icon := "✅"
 
-		return nil
+	if rv.totalFileFailures > 0 {
+		icon = "❌"
+
+		finalReportElements = append(finalReportElements,
+			color.HiYellowString("%d %s failed", rv.totalFileFailures, plural(rv.totalFileFailures, "file", "files")),
+		)
 	}
 
-	fmt.Printf("  ✅ Testing run completed. All tests passed: %d file(s) tested, %d file(s) cached\n\n",
-		rv.totalFiles,
-		rv.totalFilesCached,
+	if rv.totalFileInvalid > 0 {
+		icon = "💥"
+
+		finalReportElements = append(finalReportElements,
+			color.HiRedString("%d %s invalid", rv.totalFileInvalid, plural(rv.totalFileInvalid, "file", "files")),
+		)
+	}
+
+	if rv.totalFilesCached > 0 {
+		finalReportElements = append(finalReportElements,
+			color.CyanString("%d %s cached", rv.totalFilesCached, plural(rv.totalFilesCached, "file", "files")),
+		)
+	}
+
+	_, _ = fmt.Fprintf(rv.stdout, "--------------------------------------------------------\n%s Test suite completed: %s\n\n",
+		icon,
+		strings.Join(finalReportElements, ", "),
 	)
 
 	return nil
+}
+
+func plural(count int, sing string, plur string) string {
+	if count == 1 {
+		return sing
+	}
+
+	return plur
 }
 
 func (rv *ReporterVisitor) getRerunCommand(fileName string) string {
@@ -212,4 +288,13 @@ func (rv *ReporterVisitor) getRerunCommand(fileName string) string {
 
 func normalizePlainTextString(s string) string {
 	return strings.TrimSpace(s) + "\n"
+}
+
+func NewReporterVisitor(emitAllTraces bool, args []string, stdout io.Writer, stderr io.Writer) *ReporterVisitor {
+	return &ReporterVisitor{
+		EmitAllTraces: emitAllTraces,
+		Args:          args,
+		stdout:        stdout,
+		stderr:        stderr,
+	}
 }

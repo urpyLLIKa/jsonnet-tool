@@ -11,6 +11,8 @@ type TraceVisitor struct {
 	buf              *bytes.Buffer
 	previousTestCase string
 	traces           map[string]string
+	stderr           io.Writer
+	stdout           io.Writer
 
 	baseVisitor
 }
@@ -51,8 +53,10 @@ func (c *TraceVisitor) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func NewTraceVisitor() *TraceVisitor {
+func NewTraceVisitor(stdout io.Writer, stderr io.Writer) *TraceVisitor {
 	return &TraceVisitor{
+		stderr:           stderr,
+		stdout:           stdout,
 		buf:              nil,
 		previousTestCase: "",
 		traces:           map[string]string{},
