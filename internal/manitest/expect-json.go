@@ -9,6 +9,8 @@ import (
 	"path"
 	"reflect"
 	"strings"
+
+	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/exitcode"
 )
 
 func (c *TestRunner) evaluateTestCaseJSON(fileName string, testcase string, t *TestCase) *TestCaseResult {
@@ -24,7 +26,7 @@ func (c *TestRunner) evaluateTestCaseJSON(fileName string, testcase string, t *T
 	if ok {
 		actual, err = decodeReader(strings.NewReader(actualString))
 		if err != nil {
-			return testCaseResultForError(fmt.Errorf("unable to unmarshal JSON from string: %w", err))
+			return testCaseResultForError(fmt.Errorf("unable to unmarshal JSON from string: %w: %w", exitcode.Invalid(), err))
 		}
 	}
 
@@ -44,18 +46,18 @@ func (c *TestRunner) evaluateTestCaseJSON(fileName string, testcase string, t *T
 		canonicalActual, _ := canonicalJSON(actual)
 		_ = c.visitor.TestCaseEvaluationDelta(fileName, testcase, fixturePath, canonicalActual, "")
 
-		return testCaseResultForError(fmt.Errorf("unable to parse fixture %s: %w", fixturePath, err))
+		return testCaseResultForError(fmt.Errorf("unable to parse fixture %s: %w: %w", fixturePath, exitcode.Invalid(), err))
 	}
 
 	if !reflect.DeepEqual(actual, expectedJSONValue) {
 		canonicalActual, err := canonicalJSON(actual)
 		if err != nil {
-			return testCaseResultForError(fmt.Errorf("failed to manifest actual JSON %s: %w", fixturePath, err))
+			return testCaseResultForError(fmt.Errorf("failed to manifest actual JSON %s: %w: %w", fixturePath, exitcode.Invalid(), err))
 		}
 
 		canonicalExpected, err := canonicalJSON(expectedJSONValue)
 		if err != nil {
-			return testCaseResultForError(fmt.Errorf("failed to manifest expected JSON %s: %w", fixturePath, err))
+			return testCaseResultForError(fmt.Errorf("failed to manifest expected JSON %s: %w: %w", fixturePath, exitcode.Invalid(), err))
 		}
 
 		err = c.visitor.TestCaseEvaluationDelta(fileName, testcase, fixturePath, canonicalActual, canonicalExpected)

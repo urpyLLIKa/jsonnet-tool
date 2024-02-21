@@ -9,6 +9,9 @@ type TestVisitor interface {
 	// TestFileCompleted event happens when a manitest test file is complete.
 	TestFileCompleted(fileName string, allSuccessful bool) error
 
+	// TestFileInvalid event happens when the test file is not parseable.
+	TestFileInvalid(name string, err error) error
+
 	// --- Test Case Events ---
 
 	// TestCaseManifestationStarted event happens when a test case begins manifesting.
@@ -22,6 +25,9 @@ type TestVisitor interface {
 
 	// TestCaseEvaluationDelta event happens when the manifested output doesn't not match the expected fixture.
 	TestCaseEvaluationDelta(fileName string, testcase string, fixturePath string, canonicalActual string, canonicalExpected string) error
+
+	// TestCaseInvalid event happens when the test case fails to run
+	TestCaseInvalid(name string, testcase string, err error) error
 
 	// --- Misc Events ---
 

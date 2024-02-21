@@ -1,7 +1,10 @@
 package main
 
 import (
+	"errors"
 	"os"
+
+	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/exitcode"
 
 	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/cmd"
 )
@@ -9,6 +12,11 @@ import (
 func main() {
 	err := cmd.Execute()
 	if err != nil {
-		os.Exit(1)
+		var errWithExitCode *exitcode.Error
+		if errors.As(err, &errWithExitCode) {
+			os.Exit(errWithExitCode.ExitCode)
+		}
+
+		os.Exit(2)
 	}
 }
