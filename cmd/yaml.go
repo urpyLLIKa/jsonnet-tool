@@ -13,8 +13,12 @@ import (
 
 var errCommandFailed = errors.New("command failed")
 
-var yamlCommandJPaths []string
-var yamlCommandRenderOptions render.Options
+var (
+	yamlCommandJPaths        []string
+	yamlCommandRenderOptions render.Options
+	yamlCommandExtVars       map[string]string
+	yamlCommandExtCode       map[string]string
+)
 
 func init() {
 	rootCmd.AddCommand(yamlCommand)
@@ -38,6 +42,14 @@ func init() {
 		&yamlCommandRenderOptions.FilenamePrefix, "prefix", "p", "",
 		"Prefix to append to every emitted file",
 	)
+	yamlCommand.PersistentFlags().StringToStringVarP(
+		&yamlCommandExtVars, "ext-str", "V", map[string]string{},
+		"Provide an external value as a string to jsonnet",
+	)
+	yamlCommand.PersistentFlags().StringToStringVarP(
+		&yamlCommandExtCode, "ext-code", "C", map[string]string{},
+		"Provide an external value as a Jsonnet code to jsonnet",
+	)
 }
 
 var yamlCommand = &cobra.Command{
@@ -46,6 +58,13 @@ var yamlCommand = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		vm := jsonnet.MakeVM()
+		for k, v := range yamlCommandExtVars {
+			vm.ExtVar(k, v)
+		}
+		for k, v := range yamlCommandExtCode {
+			vm.ExtCode(k, v)
+		}
+
 		vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
 		vm.StringOutput = true
 
