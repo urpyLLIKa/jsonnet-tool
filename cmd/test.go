@@ -10,11 +10,13 @@ import (
 	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/manitest"
 )
 
-var testCommandJPaths []string
-var writeFixtures bool
-var cacheResults bool
-var jsonnetExtVars map[string]string
-var emitAllTraces bool
+var (
+	testCommandJPaths []string
+	writeFixtures     bool
+	cacheResults      bool
+	jsonnetExtVars    map[string]string
+	emitAllTraces     bool
+)
 
 func init() {
 	rootCmd.AddCommand(testCommand)
@@ -114,6 +116,11 @@ func newTestCommandRun(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func silenceErrorsUsage(cmd *cobra.Command, args []string) {
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
 }
 
 func NewTestCommand() *cobra.Command {
