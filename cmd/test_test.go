@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,10 +14,11 @@ import (
 )
 
 var testTestFixtures = []struct {
-	name       string
-	args       []string
-	exitCode   int
-	wantOutput string
+	name        string
+	args        []string
+	deleteCache bool
+	exitCode    int
+	wantOutput  string
 }{
 	{
 		name:       "test1",
@@ -61,6 +63,12 @@ var testTestFixtures = []struct {
 		wantOutput: "❌ Test suite completed: 2 files tested, 1 file passed, 1 file failed\n",
 	},
 	{
+		name:       "partial_failure_last_pass",
+		args:       []string{"../examples/tests/test4.fail.manitest.jsonnet", "../examples/tests/test1.manitest.jsonnet"},
+		exitCode:   1,
+		wantOutput: "❌ Test suite completed: 2 files tested, 1 file passed, 1 file failed\n",
+	},
+	{
 		name: "successful_failure_invalid",
 		args: []string{
 			"../examples/tests/test1.manitest.jsonnet",
@@ -69,6 +77,25 @@ var testTestFixtures = []struct {
 		},
 		exitCode:   3,
 		wantOutput: "💥 Test suite completed: 3 files tested, 1 file passed, 1 file failed, 1 file invalid\n",
+	},
+	{
+		name:        "cache_success",
+		deleteCache: true,
+		args:        []string{"--cache", "../examples/tests/test2.manitest.jsonnet"},
+		exitCode:    0,
+		wantOutput:  "✅ Test suite completed: 1 file tested, 1 file passed\n",
+	},
+	{
+		name:        "cache_successful_failure_invalid",
+		deleteCache: true,
+		args: []string{
+			"--cache",
+			"../examples/tests/test1.manitest.jsonnet",
+			"../examples/tests/test4.fail.manitest.jsonnet",
+			"../examples/tests/test5.invalid.manitest.jsonnet",
+		},
+		exitCode:   3,
+		wantOutput: "💥 Test suite completed: 3 files tested, 1 file passed, 1 file failed, 1 file invalid",
 	},
 }
 
@@ -80,6 +107,10 @@ func TestTestCommand(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			if tt.deleteCache {
+				_ = os.Remove(".jsonnet-tool-test-cache.json")
+			}
 
 			output, err := executeTestCommand(tt.args)
 

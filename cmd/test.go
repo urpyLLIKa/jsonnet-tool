@@ -10,71 +10,40 @@ import (
 	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/internal/manitest"
 )
 
-var (
+type testCommand struct {
 	testCommandJPaths []string
 	writeFixtures     bool
 	cacheResults      bool
 	jsonnetExtVars    map[string]string
 	emitAllTraces     bool
-)
-
-func init() {
-	rootCmd.AddCommand(testCommand)
-
-	testCommand.PersistentFlags().StringArrayVarP(
-		&testCommandJPaths, "jpath", "J", nil,
-		"Specify an additional library search dir",
-	)
-
-	testCommand.PersistentFlags().BoolVarP(
-		&writeFixtures, "write-fixtures", "w", false,
-		"Automatically write actual values to fixtures",
-	)
-
-	testCommand.PersistentFlags().BoolVarP(
-		&cacheResults, "cache", "", false,
-		"Cache tests for unchanged files to improve test speed",
-	)
-
-	testCommand.PersistentFlags().StringToStringVarP(
-		&jsonnetExtVars, "ext-str", "V", map[string]string{},
-		"Provide an external value as a string to jsonnet",
-	)
-
-	testCommand.PersistentFlags().BoolVarP(
-		&emitAllTraces, "all-traces", "T", false,
-		"Emit all traces. By default, only traces for failed tests will be emitted",
-	)
 }
 
-var testCommand = NewTestCommand()
-
-func newTestCommandRun(cmd *cobra.Command, args []string) error {
+func (c *testCommand) RunE(cmd *cobra.Command, args []string) error {
 	traceVisitor := manitest.NewTraceVisitor(cmd.OutOrStdout(), cmd.ErrOrStderr())
-	reporterVisitor := manitest.NewReporterVisitor(emitAllTraces, args, cmd.OutOrStdout(), cmd.ErrOrStderr())
+	reporterVisitor := manitest.NewReporterVisitor(c.emitAllTraces, args, cmd.OutOrStdout(), cmd.ErrOrStderr())
 
 	visitors := []manitest.TestVisitor{
 		traceVisitor,
 		reporterVisitor,
 	}
 
-	if writeFixtures {
+	if c.writeFixtures {
 		visitors = append(visitors, &manitest.WriterVisitor{})
 	}
 
 	vm := jsonnet.MakeVM()
-	for k, v := range jsonnetExtVars {
+	for k, v := range c.jsonnetExtVars {
 		vm.ExtVar(k, v)
 	}
 
 	vm.SetTraceOut(traceVisitor)
 	vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
 	vm.Importer(&jsonnet.FileImporter{
-		JPaths: testCommandJPaths,
+		JPaths: c.testCommandJPaths,
 	})
 
 	var cacheManager *manitest.CacheManager
-	if cacheResults {
+	if c.cacheResults {
 		cacheManager = manitest.NewCacheManager(vm)
 
 		err := cacheManager.LoadCachedResults()
@@ -124,13 +93,42 @@ func silenceErrorsUsage(cmd *cobra.Command, args []string) {
 }
 
 func NewTestCommand() *cobra.Command {
-	return &cobra.Command{
+	t := &testCommand{}
+
+	command := &cobra.Command{
 		Use:              "test",
 		Short:            "Run jsonnet tests",
 		Args:             cobra.MinimumNArgs(1),
 		PersistentPreRun: silenceErrorsUsage,
-		RunE:             newTestCommandRun,
+		RunE:             t.RunE,
 	}
+
+	command.PersistentFlags().StringArrayVarP(
+		&t.testCommandJPaths, "jpath", "J", nil,
+		"Specify an additional library search dir",
+	)
+
+	command.PersistentFlags().BoolVarP(
+		&t.writeFixtures, "write-fixtures", "w", false,
+		"Automatically write actual values to fixtures",
+	)
+
+	command.PersistentFlags().BoolVarP(
+		&t.cacheResults, "cache", "", false,
+		"Cache tests for unchanged files to improve test speed",
+	)
+
+	command.PersistentFlags().StringToStringVarP(
+		&t.jsonnetExtVars, "ext-str", "V", map[string]string{},
+		"Provide an external value as a string to jsonnet",
+	)
+
+	command.PersistentFlags().BoolVarP(
+		&t.emitAllTraces, "all-traces", "T", false,
+		"Emit all traces. By default, only traces for failed tests will be emitted",
+	)
+
+	return command
 }
 
 // Given a test runner, run the tests.
@@ -138,4 +136,8 @@ func runTests(runner *manitest.TestRunner, args []string) {
 	for _, a := range args {
 		runner.RunTestFile(a)
 	}
+}
+
+func init() {
+	rootCmd.AddCommand(NewTestCommand())
 }

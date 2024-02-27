@@ -34,6 +34,6 @@ type TestVisitor interface {
 	// CachedTestCaseResultLookup happens when the runner is looking for a cached result.
 	CachedTestCaseResultLookup(fileName string) (*TestCaseResult, error)
 
-	// TestSuiteCompleted happens when all test files have completed.
+	// AllTestsCompleted happens when all test files have completed.
 	AllTestsCompleted() error
 }
