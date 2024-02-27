@@ -6,15 +6,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func silenceErrorsUsage(cmd *cobra.Command, args []string) {
-	cmd.SilenceUsage = true
-	cmd.SilenceErrors = true
-}
-
 var rootCmd = &cobra.Command{
-	Use:              "jsonnet-tool",
-	Short:            "A tool for rendering jsonnet",
-	PersistentPreRun: silenceErrorsUsage,
+	Use:   "jsonnet-tool",
+	Short: "A tool for rendering jsonnet",
 }
 
 // Execute executes the root command.
