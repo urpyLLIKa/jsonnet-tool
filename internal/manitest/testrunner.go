@@ -90,7 +90,7 @@ func (c *TestRunner) RunTestFile(fileName string) {
 	defer func() {
 		err2 := c.visitor.TestFileCompleted(fileName, allSuccessful)
 		if err2 != nil {
-			log.Printf("warning: %v", err)
+			log.Printf("warning: %v", err2)
 		}
 	}()
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"log"
 	"os"
 	"path"
 	"slices"
@@ -150,6 +151,15 @@ func (c *CacheManager) listAllDependencies(fileName string) ([]string, error) {
 
 	results[fileName] = struct{}{}
 
+	deps, err := c.findDependenciesWithRecovery(fileName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find dependencies: %s: %w", fileName, err)
+	}
+
+	for _, dep := range deps {
+		results[dep] = struct{}{}
+	}
+
 	testManifest, err := c.vm.EvaluateAnonymousSnippet(fileName, fmt.Sprintf(evaluateTestFixturesSnippet, fileName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute test: %w", err)
@@ -194,15 +204,6 @@ func (c *CacheManager) listAllDependencies(fileName string) ([]string, error) {
 		return nil, fmt.Errorf("unable to determine cache fixture: %w", errTestFailed)
 	}
 
-	deps, err := c.vm.FindDependencies("", []string{fileName})
-	if err != nil {
-		return nil, fmt.Errorf("failed to find dependencies: %s: %w", fileName, err)
-	}
-
-	for _, dep := range deps {
-		results[dep] = struct{}{}
-	}
-
 	// Extract unique results into a slice
 	i := 0
 	uniqueResults := make([]string, len(results))
@@ -216,6 +217,25 @@ func (c *CacheManager) listAllDependencies(fileName string) ([]string, error) {
 	slices.Sort(uniqueResults)
 
 	return uniqueResults, nil
+}
+
+// findDependenciesWithRecovery will attempt to find dependencies, and handle panic recovery
+// in the case that go-jsonnet panics due to invalid source.
+func (c *CacheManager) findDependenciesWithRecovery(fileName string) (deps []string, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("warning: jsonnet panicked with %v", r)
+
+			err = fmt.Errorf("unable to find dependencies: %w", errSetupTestFailed)
+		}
+	}()
+
+	deps, err = c.vm.FindDependencies("", []string{fileName})
+	if err != nil {
+		err = fmt.Errorf("unable to find dependencies: %w", err)
+	}
+
+	return
 }
 
 func addFileForHashing(h hash.Hash, fileName string) error {

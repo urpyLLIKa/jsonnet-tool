@@ -2,6 +2,7 @@ package manitest
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/google/go-jsonnet"
 )
@@ -18,7 +19,7 @@ var _ TestVisitor = &CacheVisitor{}
 func (cv *CacheVisitor) TestFileCompleted(fileName string, allSuccessful bool) error {
 	err := cv.cacheManager.RecordResult(fileName, allSuccessful)
 	if err != nil {
-		return fmt.Errorf("failed to record cache result: %w", err)
+		log.Printf("failed to record cache result: %v", err)
 	}
 
 	return nil
