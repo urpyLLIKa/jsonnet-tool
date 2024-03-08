@@ -7,6 +7,7 @@ import (
 	"path"
 	"reflect"
 
+	yamlfmt "github.com/google/yamlfmt/formatters/basic"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -87,5 +88,26 @@ func canonicalYAML(input interface{}) (string, error) {
 		return "", fmt.Errorf("failed to marshal YAML: %w", err)
 	}
 
-	return string(bytes), nil
+	factory := yamlfmt.BasicFormatterFactory{}
+
+	// Configuration from https://github.com/google/yamlfmt/blob/main/docs/config-file.md
+	formatter, err := factory.NewFormatter(
+		map[string]interface{}{
+			"pad_line_comments":         2,
+			"retain_line_breaks_single": true,
+			"line_ending":               "lf",
+			"indent":                    2,
+			"indentless_arrays":         false,
+			"max_line_length":           80,
+		})
+	if err != nil {
+		return "", fmt.Errorf("failed to create formatter for YAML: %w", err)
+	}
+
+	formatted, err := formatter.Format(bytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to format YAML: %w", err)
+	}
+
+	return string(formatted), nil
 }
