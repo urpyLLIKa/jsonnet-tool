@@ -10,7 +10,7 @@ require (
 	github.com/kr/text v0.2.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
-	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
+	gopkg.in/alessio/shellescape.v1 v1.4.2
 	gopkg.in/yaml.v2 v2.4.0
 )
 
