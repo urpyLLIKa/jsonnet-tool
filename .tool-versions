@@ -1,5 +1,5 @@
 golang 1.22.1 # datasource=golang-version depName=golang/go
-golangci-lint 1.56.2 # datasource=github-releases depName=golangci/golangci-lint
+golangci-lint 1.57.1 # datasource=github-releases depName=golangci/golangci-lint
 goreleaser 1.24.0 # datasource=github-releases depName=goreleaser/goreleaser
 pre-commit 3.6.2 # datasource=github-releases depName=pre-commit/pre-commit
 python system # use system python
