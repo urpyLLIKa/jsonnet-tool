@@ -104,7 +104,6 @@ func TestTestCommand(t *testing.T) {
 	t.Parallel()
 
 	for _, tt := range testTestFixtures {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
