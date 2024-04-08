@@ -15,7 +15,8 @@ import (
 	"github.com/hexops/gotextdiff"
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
-	shellescape "gopkg.in/alessio/shellescape.v1"
+
+	"github.com/alessio/shellescape"
 )
 
 type ReporterVisitor struct {

@@ -3,6 +3,7 @@ module gitlab.com/gitlab-com/gl-infra/jsonnet-tool
 go 1.22.2
 
 require (
+	github.com/alessio/shellescape v1.4.2
 	github.com/fatih/color v1.16.0
 	github.com/google/go-jsonnet v0.20.0
 	github.com/google/yamlfmt v0.11.0
@@ -10,13 +11,11 @@ require (
 	github.com/kr/text v0.2.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
-	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/RageCage64/multilinediff v0.2.0 // indirect
-	github.com/alessio/shellescape v1.4.2 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
 	github.com/braydonk/yaml v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
