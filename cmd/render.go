@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path"
 
+	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/pkg/natives"
+
 	"github.com/fatih/color"
 	jsonnet "github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
@@ -78,6 +80,8 @@ var renderCommand = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		vm := jsonnet.MakeVM()
+		natives.Register(vm)
+
 		vm.ErrorFormatter.SetColorFormatter(color.New(color.FgRed).Fprintf)
 
 		vm.Importer(&jsonnet.FileImporter{
