@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"gitlab.com/gitlab-com/gl-infra/jsonnet-tool/pkg/natives"
+
 	"github.com/fatih/color"
 	jsonnet "github.com/google/go-jsonnet"
 	"github.com/spf13/cobra"
@@ -32,6 +34,8 @@ func (c *testCommand) RunE(cmd *cobra.Command, args []string) error {
 	}
 
 	vm := jsonnet.MakeVM()
+	natives.Register(vm)
+
 	for k, v := range c.jsonnetExtVars {
 		vm.ExtVar(k, v)
 	}

@@ -3,6 +3,7 @@ module gitlab.com/gitlab-com/gl-infra/jsonnet-tool
 go 1.22.2
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/alessio/shellescape v1.4.2
 	github.com/fatih/color v1.16.0
 	github.com/google/go-jsonnet v0.20.0
