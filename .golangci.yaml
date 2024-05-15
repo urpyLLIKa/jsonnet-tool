@@ -401,6 +401,7 @@ linters:
     - testpackage
     - unparam
     - varnamelen
+    - mnd
 
 issues:
   exclude-use-default: false
