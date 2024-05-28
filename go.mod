@@ -7,7 +7,7 @@ require (
 	github.com/alessio/shellescape v1.4.2
 	github.com/fatih/color v1.17.0
 	github.com/google/go-jsonnet v0.20.0
-	github.com/google/yamlfmt v0.11.0
+	github.com/google/yamlfmt v0.12.1
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/kr/text v0.2.0
 	github.com/spf13/cobra v1.8.0
@@ -16,7 +16,6 @@ require (
 )
 
 require (
-	github.com/RageCage64/multilinediff v0.2.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
 	github.com/braydonk/yaml v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
