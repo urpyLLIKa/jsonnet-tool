@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-com/gl-infra/jsonnet-tool
 
-go 1.22.2
+go 1.22.4
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
