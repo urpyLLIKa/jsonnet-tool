@@ -10,7 +10,7 @@ require (
 	github.com/google/yamlfmt v0.11.0
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/kr/text v0.2.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
 )
